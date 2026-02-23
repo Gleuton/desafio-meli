@@ -22,6 +22,11 @@ class GuzzleHttpClient implements HttpClientInterface
     {
         $response = $this->client->get($url, $options);
 
-        return json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        return json_decode(
+            (string) $response->getBody(),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
     }
 }
