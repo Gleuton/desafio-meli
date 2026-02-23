@@ -3,17 +3,14 @@
 declare(strict_types=1);
 
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
-use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
+use App\Models\Item;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 it('returns failure when seller id is empty and not in config', function () {
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
 
     config(['services.meli.seller_id' => null]);
 
@@ -28,15 +25,15 @@ it('returns success when seller id is provided via option', function () {
         ->with('12345', 30)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(0);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => '12345'])
         ->assertExitCode(0)
         ->expectsOutputToContain('Successfully dispatched');
+
+    expect(Item::count())->toBe(0); // Jobs ainda não foram processados
 });
 
 it('uses seller id from config when option not provided', function () {
@@ -45,13 +42,11 @@ it('uses seller id from config when option not provided', function () {
         ->with('config-seller-id', 30)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
 
     config(['services.meli.seller_id' => 'config-seller-id']);
+
+    expect(Item::count())->toBe(0);
 
     $this->artisan('meli:fetch-ads')
         ->assertExitCode(0)
@@ -64,11 +59,7 @@ it('uses custom limit from option', function () {
         ->with('seller-id', 50)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
 
     $this->artisan('meli:fetch-ads', [
         '--seller-id' => 'seller-id',
@@ -78,14 +69,14 @@ it('uses custom limit from option', function () {
 });
 
 it('skips execution when database has 30 or more ads without force flag', function () {
+    Item::factory()->count(30)->create();
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldNotReceive('execute');
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(30);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(30);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
         ->assertExitCode(0)
@@ -93,16 +84,16 @@ it('skips execution when database has 30 or more ads without force flag', functi
 });
 
 it('executes when database has 30+ ads with force flag', function () {
+    Item::factory()->count(50)->create();
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
         ->with('seller-id', 30)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(50);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(50);
 
     $this->artisan('meli:fetch-ads', [
         '--seller-id' => 'seller-id',
@@ -113,14 +104,14 @@ it('executes when database has 30+ ads with force flag', function () {
 });
 
 it('displays current ad count', function () {
+    Item::factory()->count(15)->create();
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(15);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(15);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
         ->assertExitCode(0)
@@ -132,11 +123,9 @@ it('catches and handles exceptions from use case', function () {
     $mockUseCase->shouldReceive('execute')
         ->andThrow(new Exception('API connection failed'));
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(0);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
         ->assertExitCode(1)
@@ -147,11 +136,9 @@ it('shows message about jobs processing when successful', function () {
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(0);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
         ->assertExitCode(0)
@@ -164,11 +151,9 @@ it('displays seller id being fetched', function () {
         ->with('specific-seller-999', 30)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(0);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => 'specific-seller-999'])
         ->assertExitCode(0)
@@ -181,11 +166,9 @@ it('converts limit option to integer', function () {
         ->with('seller-id', 75)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(0);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(0);
 
     $this->artisan('meli:fetch-ads', [
         '--seller-id' => 'seller-id',
@@ -195,16 +178,17 @@ it('converts limit option to integer', function () {
 });
 
 it('returns success when ads count is less than 30', function () {
+    // Criar 29 itens no banco
+    Item::factory()->count(29)->create();
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
         ->with('seller-id', 30)
         ->once();
 
-    $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
-    $mockRepository->shouldReceive('count')->andReturn(29);
-
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-    $this->app->instance(ItemRepositoryInterface::class, $mockRepository);
+
+    expect(Item::count())->toBe(29);
 
     $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
         ->assertExitCode(0)
