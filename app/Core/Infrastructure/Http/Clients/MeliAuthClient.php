@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-final class MeliAuthClient
+class MeliAuthClient
 {
     private string $baseUrl;
 
