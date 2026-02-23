@@ -34,6 +34,19 @@ class EloquentItemRepository implements ItemRepositoryInterface
         return Item::where('meli_id', $itemId)->exists();
     }
 
+    public function count(): int
+    {
+        return Item::count();
+    }
+
+    public function createPending(string $itemId): void
+    {
+        Item::firstOrCreate(
+            ['meli_id' => $itemId],
+            ['status' => 'pending']
+        );
+    }
+
     public function markAsProcessed(string $itemId): void
     {
         Item::where('meli_id', $itemId)->update([

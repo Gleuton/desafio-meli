@@ -6,6 +6,7 @@ use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
+use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use GuzzleHttp\Exception\GuzzleException;
 
 class FetchSellerAdsUseCase
@@ -16,6 +17,7 @@ class FetchSellerAdsUseCase
         private readonly MeliAuthClient $authClient,
         private readonly MeliSearchClient $searchClient,
         private readonly QueueDispatcherInterface $queueDispatcher,
+        private readonly ItemRepositoryInterface $repository,
     ) {}
 
     public function execute(string $sellerId, int $maxAds = 30): void
@@ -88,6 +90,8 @@ class FetchSellerAdsUseCase
             if (! $this->hasValidId($item)) {
                 continue;
             }
+
+            $this->repository->createPending($item['id']);
 
             $this->queueDispatcher->dispatch(
                 new ProcessItemMessage($item['id'], $token)
