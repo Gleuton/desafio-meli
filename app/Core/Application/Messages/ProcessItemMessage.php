@@ -9,6 +9,9 @@ class ProcessItemMessage
         public readonly string $accessToken,
     ) {}
 
+    /**
+     * @return array<string, string>
+     */
     public function __invoke(): array
     {
         return [
