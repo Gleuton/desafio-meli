@@ -7,6 +7,9 @@ use Carbon\Carbon;
 
 class EloquentItemRepository implements ItemRepositoryInterface
 {
+    /**
+     * @param  array<string, mixed>  $itemData
+     */
     public function saveFromApi(array $itemData): void
     {
         Item::updateOrCreate(
