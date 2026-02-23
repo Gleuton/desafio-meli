@@ -39,7 +39,10 @@ class MeliAuthClient
                 ]);
             }
 
-            throw $e;
+            return [
+                'access_token' => null,
+                'inactive_token' => 1,
+            ];
         }
     }
 }

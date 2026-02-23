@@ -71,7 +71,7 @@ test('getToken bubbles up guzzle exceptions', function () {
     $client->getToken();
 })->throws(ConnectException::class);
 
-test('getToken logs rate limit (429) and re-throws exception', function () {
+test('getToken logs rate limit (429) and log warning', function () {
     Log::spy();
 
     $baseUrl = 'https://api.test';
@@ -87,16 +87,8 @@ test('getToken logs rate limit (429) and re-throws exception', function () {
         ->willThrowException($exception);
 
     $client = new MeliAuthClient($httpClient, $baseUrl, $sellerId);
+    $client->getToken();
 
-    try {
-        $client->getToken();
-        $this->fail('Expected ClientException to be thrown');
-    } catch (ClientException $e) {
-        // Exception should be re-thrown
-        expect($e)->toBe($exception);
-    }
-
-    // Verify that rate limit was logged
     Log::shouldHaveReceived('warning')
         ->once()
         ->with('[MeliAuthClient] Rate limit detected (429)', \Mockery::on(function ($context) use ($sellerId) {
