@@ -6,6 +6,7 @@ use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
+use App\Jobs\ProcessItemJob;
 use GuzzleHttp\Exception\GuzzleException;
 
 class FetchSellerAdsUseCase
@@ -75,7 +76,7 @@ class FetchSellerAdsUseCase
             $this->repository->createPending($itemId);
 
             $this->queueDispatcher->dispatch(
-                new ProcessItemMessage($itemId, $token)
+                new ProcessItemJob(new ProcessItemMessage($itemId, $token)),
             );
 
             $dispatchedCount++;

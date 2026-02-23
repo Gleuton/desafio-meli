@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Core\Application\Contracts\QueueDispatcherInterface;
-use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
+use App\Jobs\ProcessItemJob;
 
 function createResultsWithIds(int $start, int $count): array
 {
@@ -50,7 +50,7 @@ it('dispatches messages respecting limit', function () {
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
     $dispatcher->shouldReceive('dispatch')
         ->times(10)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(10);
 
@@ -75,7 +75,7 @@ it('increments offset correctly for pagination', function () {
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
     $dispatcher->shouldReceive('dispatch')
         ->times(15)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(15);
 
@@ -105,7 +105,7 @@ it('ignores items without id and does not dispatch them', function () {
 
     $dispatcher->shouldReceive('dispatch')
         ->times(3)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(3);
 
@@ -127,7 +127,7 @@ it('stops pagination when results are empty', function () {
 
     $dispatcher->shouldReceive('dispatch')
         ->times(3)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(3);
 
@@ -147,7 +147,7 @@ it('stops exactly at the specified limit', function () {
 
     $dispatcher->shouldReceive('dispatch')
         ->times(7)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(7);
 
@@ -173,9 +173,9 @@ it('dispatches ProcessItemMessage with correct item id and token', function () {
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
     $dispatcher->shouldReceive('dispatch')
         ->with(
-            Mockery::on(function (ProcessItemMessage $message) use ($token) {
-                return $message->accessToken === $token
-                    && in_array($message->itemId, ['ITEM_ABC_123', 'ITEM_XYZ_789']);
+            Mockery::on(function (ProcessItemJob $job) use ($token) {
+                return $job->message->accessToken === $token
+                    && in_array($job->message->itemId, ['ITEM_ABC_123', 'ITEM_XYZ_789']);
             })
         )
         ->twice();
@@ -201,7 +201,7 @@ it('handles multiple pagination pages correctly', function () {
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
     $dispatcher->shouldReceive('dispatch')
         ->times(20)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(20);
 
@@ -221,7 +221,7 @@ it('stops iteration when limit is smaller than available results', function () {
 
     $dispatcher->shouldReceive('dispatch')
         ->times(7)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(7);
 
@@ -247,7 +247,7 @@ it('uses default max ads of 30 when not specified', function () {
 
     $dispatcher->shouldReceive('dispatch')
         ->times(30)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(30);
 
@@ -281,7 +281,7 @@ it('correctly handles mixed valid and invalid items across pages', function () {
 
     $dispatcher->shouldReceive('dispatch')
         ->times(7)
-        ->with(Mockery::type(ProcessItemMessage::class));
+        ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(7);
 
