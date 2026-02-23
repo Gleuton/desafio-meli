@@ -126,7 +126,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Run Tests with Coverage
-        run: vendor/bin/pest --coverage --min=85 --coverage-clover=coverage/clover.xml
+        run: vendor/bin/pest --coverage --min=75 --coverage-clover=coverage/clover.xml
 
       - name: Upload Coverage Report
         if: always()

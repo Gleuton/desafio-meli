@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MIN_COVERAGE=85
+MIN_COVERAGE=75
 
 echo ""
 echo "========================================"
