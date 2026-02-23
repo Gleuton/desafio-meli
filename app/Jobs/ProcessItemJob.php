@@ -13,6 +13,14 @@ class ProcessItemJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+
+    public int $timeout = 60;
+
+    public int $backoff = 30;
+
+    public bool $failOnTimeout = true;
+
     public function __construct(
         public readonly ProcessItemMessage $message
     ) {}
