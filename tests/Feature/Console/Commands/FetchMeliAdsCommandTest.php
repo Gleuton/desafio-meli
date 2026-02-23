@@ -178,7 +178,6 @@ it('converts limit option to integer', function () {
 });
 
 it('returns success when ads count is less than 30', function () {
-    // Criar 29 itens no banco
     Item::factory()->count(29)->create();
 
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
