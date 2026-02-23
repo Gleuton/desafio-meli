@@ -34,5 +34,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
+    'meli' => [
+        'base_url' => env('MELI_BASE_URL'),
+        'seller_id' => env('MELI_SELLER_ID', '252254392'),
+    ],
 ];
