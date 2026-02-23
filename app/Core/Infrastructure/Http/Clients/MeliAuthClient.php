@@ -2,66 +2,53 @@
 
 namespace App\Core\Infrastructure\Http\Clients;
 
-use Illuminate\Support\Facades\Http;
+use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class MeliAuthClient
 {
-    private string $baseUrl;
-
-    private string $sellerId;
-
-    public function __construct()
-    {
-        $this->baseUrl = rtrim(config('services.meli.base_url'), '/');
-        $this->sellerId = config('services.meli.seller_id');
-    }
+    public function __construct(
+        private readonly HttpClientInterface $httpClient,
+        private readonly string $baseUrl,
+        private readonly string $sellerId,
+    ) {}
 
     /**
-     * @return array{
-     *   store_id?: string,
-     *   user_id?: int,
-     *   access_token?: string,
-     *   inactive_token?: int
-     * }|null
+     * @return array<string, mixed>
+     *
+     * @throws GuzzleException
      */
-    public function getToken(): ?array
+    public function getToken(): array
     {
-        $url = "{$this->baseUrl}/traymeli/sellers/{$this->sellerId}";
+        $url = sprintf(
+            '%s/traymeli/sellers/%s',
+            rtrim($this->baseUrl, '/'),
+            urlencode($this->sellerId)
+        );
+
+        Log::info('[MeliAuthClient] Requesting token', ['url' => $url]);
 
         try {
-            Log::info("[MeliAuthClient] Requesting token: {$url}");
+            $data = $this->httpClient->get($url, []);
 
-            $response = Http::timeout(5)->get($url);
-
-            if ($response->status() === 429) {
-                Log::warning('[MeliAuthClient] Rate limit (429)');
-
-                return null;
-            }
-
-            if (! $response->successful()) {
-                Log::error('[MeliAuthClient] Request failed', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-
-                return null;
-            }
-
-            $data = $response->json();
-
-            Log::info('[MeliAuthClient] Response received', $data);
-
-            return $data;
-
-        } catch (Throwable $e) {
-            Log::error('[MeliAuthClient] Exception while requesting token', [
-                'exception' => $e->getMessage(),
+            Log::info('[MeliAuthClient] Token received successfully', [
+                'has_access_token' => isset($data['access_token']),
+                'inactive_token' => $data['inactive_token'] ?? null,
             ]);
 
-            return null;
+            return $data;
+        } catch (ClientException $e) {
+            if ($e->getResponse()->getStatusCode() === 429) {
+                Log::warning('[MeliAuthClient] Rate limit detected (429)', [
+                    'url' => $url,
+                    'seller_id' => $this->sellerId,
+                    'response_body' => (string) $e->getResponse()->getBody(),
+                ]);
+            }
+
+            throw $e;
         }
     }
 }

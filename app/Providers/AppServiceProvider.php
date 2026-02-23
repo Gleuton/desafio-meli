@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
 use App\Core\Infrastructure\Http\GuzzleHttpClient;
@@ -15,6 +16,15 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(HttpClientInterface::class, GuzzleHttpClient::class);
+
+        $this->app->bind(MeliAuthClient::class, function ($app) {
+            return new MeliAuthClient(
+                $app->make(HttpClientInterface::class),
+                config('services.meli.base_url'),
+                config('services.meli.seller_id')
+            );
+        });
+
         $this->app->bind(MeliSearchClient::class, function ($app) {
             return new MeliSearchClient(
                 $app->make(HttpClientInterface::class),

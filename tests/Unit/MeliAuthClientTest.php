@@ -1,23 +1,21 @@
 <?php
 
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
-use Illuminate\Support\Facades\Http;
+use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 uses(TestCase::class);
 
-function meliAuthClientBaseConfig(): array
-{
-    return [
-        'services.meli.base_url' => 'https://api.test/',
-        'services.meli.seller_id' => 'seller-1',
-    ];
-}
+test('getToken builds url correctly and returns response data on success', function () {
+    $baseUrl = 'https://api.test/';
+    $sellerId = 'seller-1';
 
-test('getToken returns response data on success', function () {
-    config(meliAuthClientBaseConfig());
-
-    $url = 'https://api.test/traymeli/sellers/seller-1';
+    $expectedUrl = 'https://api.test/traymeli/sellers/seller-1';
     $payload = [
         'store_id' => 'store-1',
         'user_id' => 123,
@@ -25,55 +23,86 @@ test('getToken returns response data on success', function () {
         'inactive_token' => 0,
     ];
 
-    Http::fake([
-        $url => Http::response($payload, 200),
-    ]);
+    $httpClient = $this->createMock(HttpClientInterface::class);
+    $httpClient->expects($this->once())
+        ->method('get')
+        ->with($expectedUrl, [])
+        ->willReturn($payload);
 
-    $client = new MeliAuthClient;
+    $client = new MeliAuthClient($httpClient, $baseUrl, $sellerId);
 
     expect($client->getToken())->toMatchArray($payload);
-
-    Http::assertSent(function ($request) use ($url) {
-        return $request->url() === $url && $request->method() === 'GET';
-    });
 });
 
-test('getToken returns null on rate limit', function () {
-    config(meliAuthClientBaseConfig());
+test('getToken urlencodes seller id', function () {
+    $baseUrl = 'https://api.test';
+    $sellerId = 'seller id/1';
 
-    $url = 'https://api.test/traymeli/sellers/seller-1';
+    $expectedUrl = 'https://api.test/traymeli/sellers/seller+id%2F1';
+    $payload = [
+        'store_id' => 'store-1',
+        'user_id' => 123,
+        'access_token' => 'token-abc',
+        'inactive_token' => 0,
+    ];
 
-    Http::fake([
-        $url => Http::response(['message' => 'rate limit'], 429),
-    ]);
+    $httpClient = $this->createMock(HttpClientInterface::class);
+    $httpClient->expects($this->once())
+        ->method('get')
+        ->with($expectedUrl, [])
+        ->willReturn($payload);
 
-    $client = new MeliAuthClient;
+    $client = new MeliAuthClient($httpClient, $baseUrl, $sellerId);
 
-    expect($client->getToken())->toBeNull();
+    expect($client->getToken())->toMatchArray($payload);
 });
 
-test('getToken returns null on non successful response', function () {
-    config(meliAuthClientBaseConfig());
+test('getToken bubbles up guzzle exceptions', function () {
+    $baseUrl = 'https://api.test';
+    $sellerId = 'seller-1';
 
-    $url = 'https://api.test/traymeli/sellers/seller-1';
+    $httpClient = $this->createMock(HttpClientInterface::class);
+    $httpClient->expects($this->once())
+        ->method('get')
+        ->willThrowException(new ConnectException('boom', new Request('GET', 'https://api.test')));
 
-    Http::fake([
-        $url => Http::response('server error', 500),
-    ]);
+    $client = new MeliAuthClient($httpClient, $baseUrl, $sellerId);
 
-    $client = new MeliAuthClient;
+    $client->getToken();
+})->throws(ConnectException::class);
 
-    expect($client->getToken())->toBeNull();
-});
+test('getToken logs rate limit (429) and re-throws exception', function () {
+    Log::spy();
 
-test('getToken returns null on exception', function () {
-    config(meliAuthClientBaseConfig());
+    $baseUrl = 'https://api.test';
+    $sellerId = 'seller-1';
 
-    Http::fake(function () {
-        throw new Exception('boom');
-    });
+    $request = new Request('GET', 'https://api.test/traymeli/sellers/seller-1');
+    $response = new Response(429, [], '{"message": "rate limit exceeded"}');
+    $exception = new ClientException('Rate limit', $request, $response);
 
-    $client = new MeliAuthClient;
+    $httpClient = $this->createMock(HttpClientInterface::class);
+    $httpClient->expects($this->once())
+        ->method('get')
+        ->willThrowException($exception);
 
-    expect($client->getToken())->toBeNull();
+    $client = new MeliAuthClient($httpClient, $baseUrl, $sellerId);
+
+    try {
+        $client->getToken();
+        $this->fail('Expected ClientException to be thrown');
+    } catch (ClientException $e) {
+        // Exception should be re-thrown
+        expect($e)->toBe($exception);
+    }
+
+    // Verify that rate limit was logged
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->with('[MeliAuthClient] Rate limit detected (429)', \Mockery::on(function ($context) use ($sellerId) {
+            return isset($context['url'])
+                && isset($context['seller_id'])
+                && $context['seller_id'] === $sellerId
+                && isset($context['response_body']);
+        }));
 });
