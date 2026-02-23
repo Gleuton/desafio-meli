@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
+use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use Illuminate\Console\Command;
 use Throwable;
@@ -18,7 +19,8 @@ class FetchMeliAdsCommand extends Command
 
     public function handle(
         FetchSellerAdsUseCase $useCase,
-        ItemRepositoryInterface $repository
+        ItemRepositoryInterface $repository,
+        MeliAuthClient $authClient
     ): int {
         $sellerId = $this->option('seller-id') ?? config('services.meli.seller_id');
         $limit = (int) $this->option('limit');
@@ -48,13 +50,27 @@ class FetchMeliAdsCommand extends Command
         $this->info("Fetching up to {$limit} ads from seller: {$sellerId}");
 
         try {
-            $useCase->execute($sellerId, $limit);
+            $this->info('Verifying access token with Meli Auth...');
+            $auth = $authClient->getToken();
+
+            if (($auth['inactive_token'] ?? 1) !== 0) {
+                $this->warn('Invalid or inactive token received from Meli Auth service.');
+                $this->warn('Reason: Token is inactive or not available');
+                $this->info('The command will retry on the next execution or when a valid token is available.');
+
+                return self::SUCCESS;
+            }
+
+            $this->info('Valid token received');
+
+            $useCase->execute($sellerId, $auth['access_token'], $limit);
             $this->info("Successfully dispatched jobs to fetch {$limit} ads.");
             $this->info('Jobs will be processed by queue workers.');
 
             return self::SUCCESS;
         } catch (Throwable $e) {
             $this->error("Failed to fetch ads: {$e->getMessage()}");
+            $this->line("Stack trace: {$e->getTraceAsString()}");
 
             return self::FAILURE;
         }

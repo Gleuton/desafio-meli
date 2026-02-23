@@ -28,17 +28,8 @@ class MeliAuthClient
             urlencode($this->sellerId)
         );
 
-        Log::info('[MeliAuthClient] Requesting token', ['url' => $url]);
-
         try {
-            $data = $this->httpClient->get($url, []);
-
-            Log::info('[MeliAuthClient] Token received successfully', [
-                'has_access_token' => isset($data['access_token']),
-                'inactive_token' => $data['inactive_token'] ?? null,
-            ]);
-
-            return $data;
+            return $this->httpClient->get($url, []);
         } catch (ClientException $e) {
             if ($e->getResponse()->getStatusCode() === 429) {
                 Log::warning('[MeliAuthClient] Rate limit detected (429)', [
