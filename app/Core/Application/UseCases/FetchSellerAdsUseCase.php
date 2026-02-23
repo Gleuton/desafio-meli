@@ -6,9 +6,12 @@ use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
+use GuzzleHttp\Exception\GuzzleException;
 
 class FetchSellerAdsUseCase
 {
+    private const PAGINATION_LIMIT = 5;
+
     public function __construct(
         private readonly MeliAuthClient $authClient,
         private readonly MeliSearchClient $searchClient,
@@ -17,49 +20,94 @@ class FetchSellerAdsUseCase
 
     public function execute(string $sellerId, int $maxAds = 30): void
     {
-        $auth = $this->authClient->getToken();
+        $token = $this->retrieveActiveToken();
 
-        if (($auth['inactive_token'] ?? 1) !== 0) {
+        if ($token === null) {
             return;
         }
 
-        $token = $auth['access_token'];
+        $this->fetchAndDispatchAds($sellerId, $token, $maxAds);
+    }
 
+    private function retrieveActiveToken(): ?string
+    {
+        $auth = $this->authClient->getToken();
+
+        if (($auth['inactive_token'] ?? 1) !== 0) {
+            return null;
+        }
+
+        return $auth['access_token'];
+    }
+
+    private function fetchAndDispatchAds(string $sellerId, string $token, int $maxAds): void
+    {
         $offset = 0;
-        $limit = 5;
-        $collected = 0;
+        $dispatchedCount = 0;
 
-        while ($collected < $maxAds) {
-            $response = $this->searchClient->searchBySeller(
-                sellerId: $sellerId,
-                accessToken: $token,
-                limit: $limit,
-                offset: $offset
-            );
-
-            $results = $response['results'] ?? [];
+        while ($dispatchedCount < $maxAds) {
+            $results = $this->searchSeller($sellerId, $token, $offset);
 
             if (empty($results)) {
                 break;
             }
 
-            foreach ($results as $item) {
-                if (! isset($item['id'])) {
-                    continue;
-                }
+            $dispatchedCount = $this->processResults($results, $token, $dispatchedCount, $maxAds);
 
-                $this->queueDispatcher->dispatch(
-                    new ProcessItemMessage($item['id'], $token)
-                );
-
-                $collected++;
-
-                if ($collected >= $maxAds) {
-                    break 2;
-                }
+            if ($dispatchedCount >= $maxAds) {
+                break;
             }
 
-            $offset += $limit;
+            $offset += self::PAGINATION_LIMIT;
         }
+    }
+
+    /**
+     * @return array<string, mixed>[]
+     *
+     * @throws GuzzleException
+     */
+    private function searchSeller(string $sellerId, string $token, int $offset): array
+    {
+        $response = $this->searchClient->searchBySeller(
+            sellerId: $sellerId,
+            accessToken: $token,
+            limit: self::PAGINATION_LIMIT,
+            offset: $offset
+        );
+
+        return $response['results'] ?? [];
+    }
+
+    /**
+     * @param  array<string, mixed>[]  $results
+     */
+    private function processResults(array $results, string $token, int $dispatchedCount, int $maxAds): int
+    {
+        foreach ($results as $item) {
+            if (! $this->hasValidId($item)) {
+                continue;
+            }
+
+            $this->queueDispatcher->dispatch(
+                new ProcessItemMessage($item['id'], $token)
+            );
+
+            $dispatchedCount++;
+
+            if ($dispatchedCount >= $maxAds) {
+                break;
+            }
+        }
+
+        return $dispatchedCount;
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function hasValidId(array $item): bool
+    {
+        return isset($item['id']);
     }
 }
