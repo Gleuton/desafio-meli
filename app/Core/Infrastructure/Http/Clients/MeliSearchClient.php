@@ -3,6 +3,7 @@
 namespace App\Core\Infrastructure\Http\Clients;
 
 use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
+use GuzzleHttp\Exception\GuzzleException;
 
 class MeliSearchClient
 {
@@ -11,6 +12,11 @@ class MeliSearchClient
         private readonly string $baseUrl,
     ) {}
 
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws GuzzleException
+     */
     public function searchBySeller(
         string $sellerId,
         string $accessToken,

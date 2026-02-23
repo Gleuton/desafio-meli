@@ -12,6 +12,7 @@ class GuzzleHttpClient implements HttpClientInterface
     public function __construct(private readonly Client $client) {}
 
     /**
+     * @param  array<string, mixed>  $options
      * @return array<string, mixed>
      *
      * @throws GuzzleException
