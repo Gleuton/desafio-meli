@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MIN_COVERAGE=85
+
+echo ""
+echo "========================================"
+echo "  Pre-push quality checks"
+echo "========================================"
+
+echo ""
+echo "[1/2] PHPStan..."
+XDEBUG_MODE=off php -d memory_limit=1G vendor/bin/phpstan analyse
+
+echo ""
+  echo "[2/2] Tests + Coverage (min ${MIN_COVERAGE}%)..."
+  php -d pcov.enabled=1 vendor/bin/pest --coverage --min="$MIN_COVERAGE"
+
+echo ""
+echo "========================================"
+echo "  All checks passed"
+echo "========================================"
+

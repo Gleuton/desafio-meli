@@ -1,0 +1,31 @@
+includes:
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    level: 6
+
+    paths:
+        - app/Core
+
+    tmpDir: .phpstan/cache
+
+    inferPrivatePropertyTypeFromConstructor: true
+
+    treatPhpDocTypesAsCertain: false
+
+    excludePaths:
+        - tests/*
+        - vendor/*
+        - storage/*
+        - bootstrap/*
+        - config/*
+        - routes/*
+        - database/*
+        - node_modules/*
+
+    reportUnmatchedIgnoredErrors: true
+services:
+    -
+        class: App\Support\PHPStan\Rules\NoFrameworkInDomainRule
+        tags:
+            - phpstan.rules.rule
