@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
 use App\Core\Infrastructure\Http\GuzzleHttpClient;
+use App\Core\Infrastructure\Queue\LaravelQueueDispatcher;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -39,6 +41,11 @@ class AppServiceProvider extends ServiceProvider
                 config('services.meli.base_url')
             );
         });
+
+        $this->app->bind(
+            QueueDispatcherInterface::class,
+            LaravelQueueDispatcher::class
+        );
     }
 
     /**
