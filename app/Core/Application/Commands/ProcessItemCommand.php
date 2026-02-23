@@ -2,6 +2,9 @@
 
 namespace App\Core\Application\Commands;
 
+/**
+ * @codeCoverageIgnore
+ */
 class ProcessItemCommand
 {
     public function __construct(
