@@ -8,7 +8,6 @@ use App\Core\Application\UseCases\FetchSellerAdsUseCase;
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 
-// Helper functions
 function createResultsWithIds(int $start, int $count): array
 {
     return collect(range($start, $start + $count - 1))
@@ -16,7 +15,6 @@ function createResultsWithIds(int $start, int $count): array
         ->toArray();
 }
 
-// ===== Test: Original Test - Dispatches messages respecting limit =====
 it('dispatches messages respecting limit', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -48,7 +46,6 @@ it('dispatches messages respecting limit', function () {
     $useCase->execute('252254392', 10);
 });
 
-// ===== Test: Inactive Token =====
 it('returns early when token is inactive', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -69,7 +66,6 @@ it('returns early when token is inactive', function () {
     $useCase->execute('252254392', 10);
 });
 
-// ===== Test: Pagination Offset Increments Correctly =====
 it('increments offset correctly for pagination', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -80,7 +76,7 @@ it('increments offset correctly for pagination', function () {
         ]);
 
     $searchClient = Mockery::mock(MeliSearchClient::class);
-    // Expect calls with offset 0, 5, and 10
+
     $searchClient->shouldReceive('searchBySeller')
         ->with('252254392', 'fake-token', 5, 0)->once()
         ->andReturn(['results' => createResultsWithIds(1, 5)]);
@@ -101,7 +97,6 @@ it('increments offset correctly for pagination', function () {
     $useCase->execute('252254392', 15);
 });
 
-// ===== Test: Items Without ID Are Ignored =====
 it('ignores items without id and does not dispatch them', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -124,11 +119,11 @@ it('ignores items without id and does not dispatch them', function () {
                     ['id' => 'ID_3'],
                 ],
             ],
-            ['results' => []] // Empty response on second call
+            ['results' => []]
         );
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    // Should only dispatch 3 items (those with ID)
+
     $dispatcher->shouldReceive('dispatch')
         ->times(3)
         ->with(Mockery::type(ProcessItemMessage::class));
@@ -138,7 +133,6 @@ it('ignores items without id and does not dispatch them', function () {
     $useCase->execute('252254392', 10);
 });
 
-// ===== Test: Empty Results Stop Pagination =====
 it('stops pagination when results are empty', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -157,17 +151,16 @@ it('stops pagination when results are empty', function () {
         ->andReturn(['results' => []]);
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    // Should only dispatch 3 items from first page
+
     $dispatcher->shouldReceive('dispatch')
         ->times(3)
         ->with(Mockery::type(ProcessItemMessage::class));
 
     $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
 
-    $useCase->execute('252254392', 100); // Request many items
+    $useCase->execute('252254392', 100);
 });
 
-// ===== Test: Exact Limit Reached =====
 it('stops exactly at the specified limit', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -178,13 +171,13 @@ it('stops exactly at the specified limit', function () {
         ]);
 
     $searchClient = Mockery::mock(MeliSearchClient::class);
-    // Should only be called once since first response will reach the limit
+
     $searchClient->shouldReceive('searchBySeller')
         ->once()
         ->andReturn(['results' => createResultsWithIds(1, 7)]);
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    // Should dispatch exactly 7 items and no more
+
     $dispatcher->shouldReceive('dispatch')
         ->times(7)
         ->with(Mockery::type(ProcessItemMessage::class));
@@ -194,7 +187,6 @@ it('stops exactly at the specified limit', function () {
     $useCase->execute('252254392', 7);
 });
 
-// ===== Test: Message Contains Correct Data =====
 it('dispatches ProcessItemMessage with correct item id and token', function () {
     $sellerId = '252254392';
     $token = 'test-access-token-123';
@@ -230,7 +222,6 @@ it('dispatches ProcessItemMessage with correct item id and token', function () {
     $useCase->execute($sellerId, 2);
 });
 
-// ===== Test: Multiple Pagination Pages =====
 it('handles multiple pagination pages correctly', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -241,7 +232,7 @@ it('handles multiple pagination pages correctly', function () {
         ]);
 
     $searchClient = Mockery::mock(MeliSearchClient::class);
-    // Simulate 4 pages with 5 items each
+
     $searchClient->shouldReceive('searchBySeller')
         ->andReturn(
             ['results' => createResultsWithIds(1, 5)],
@@ -260,7 +251,6 @@ it('handles multiple pagination pages correctly', function () {
     $useCase->execute('252254392', 20);
 });
 
-// ===== Test: Limit Smaller Than Available Results =====
 it('stops iteration when limit is smaller than available results', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -271,13 +261,13 @@ it('stops iteration when limit is smaller than available results', function () {
         ]);
 
     $searchClient = Mockery::mock(MeliSearchClient::class);
-    // First page has 10 items, but we only want 7
+
     $searchClient->shouldReceive('searchBySeller')
         ->once()
         ->andReturn(['results' => createResultsWithIds(1, 10)]);
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    // Should dispatch exactly 7 items, not all 10
+
     $dispatcher->shouldReceive('dispatch')
         ->times(7)
         ->with(Mockery::type(ProcessItemMessage::class));
@@ -287,7 +277,6 @@ it('stops iteration when limit is smaller than available results', function () {
     $useCase->execute('252254392', 7);
 });
 
-// ===== Test: Default Max Ads =====
 it('uses default max ads of 30 when not specified', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -298,7 +287,7 @@ it('uses default max ads of 30 when not specified', function () {
         ]);
 
     $searchClient = Mockery::mock(MeliSearchClient::class);
-    // Simulate enough pages to reach 30 items
+
     $searchClient->shouldReceive('searchBySeller')
         ->andReturn(
             ['results' => createResultsWithIds(1, 5)],
@@ -310,17 +299,16 @@ it('uses default max ads of 30 when not specified', function () {
         );
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    // Should dispatch exactly 30 items
+
     $dispatcher->shouldReceive('dispatch')
         ->times(30)
         ->with(Mockery::type(ProcessItemMessage::class));
 
     $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
 
-    $useCase->execute('252254392'); // No max ads specified
+    $useCase->execute('252254392');
 });
 
-// ===== Test: Mixed Valid and Invalid Items =====
 it('correctly handles mixed valid and invalid items across pages', function () {
     $authClient = Mockery::mock(MeliAuthClient::class);
     $authClient->shouldReceive('getToken')
@@ -331,8 +319,7 @@ it('correctly handles mixed valid and invalid items across pages', function () {
         ]);
 
     $searchClient = Mockery::mock(MeliSearchClient::class);
-    // First page: 3 valid items and 2 without ID
-    // Second page: 4 valid items (total 7 valid items)
+
     $searchClient->shouldReceive('searchBySeller')
         ->times(3)
         ->andReturn(
@@ -348,11 +335,11 @@ it('correctly handles mixed valid and invalid items across pages', function () {
             [
                 'results' => createResultsWithIds(4, 4),
             ],
-            ['results' => []] // Empty on third call to stop pagination
+            ['results' => []]
         );
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    // Should dispatch 7 valid items total (3 from first page + 4 from second page)
+
     $dispatcher->shouldReceive('dispatch')
         ->times(7)
         ->with(Mockery::type(ProcessItemMessage::class));
