@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
+use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Models\Item;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -10,7 +11,10 @@ uses(RefreshDatabase::class);
 
 it('returns failure when seller id is empty and not in config', function () {
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
 
     config(['services.meli.seller_id' => null]);
 
@@ -20,11 +24,20 @@ it('returns failure when seller id is empty and not in config', function () {
 });
 
 it('returns success when seller id is provided via option', function () {
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('12345', 30)
+        ->with('12345', 'test-token', 30)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(0);
@@ -33,15 +46,24 @@ it('returns success when seller id is provided via option', function () {
         ->assertExitCode(0)
         ->expectsOutputToContain('Successfully dispatched');
 
-    expect(Item::count())->toBe(0); // Jobs ainda não foram processados
+    expect(Item::count())->toBe(0);
 });
 
 it('uses seller id from config when option not provided', function () {
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('config-seller-id', 30)
+        ->with('config-seller-id', 'test-token', 30)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     config(['services.meli.seller_id' => 'config-seller-id']);
@@ -54,11 +76,20 @@ it('uses seller id from config when option not provided', function () {
 });
 
 it('uses custom limit from option', function () {
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('seller-id', 50)
+        ->with('seller-id', 'test-token', 50)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     $this->artisan('meli:fetch-ads', [
@@ -71,9 +102,13 @@ it('uses custom limit from option', function () {
 it('skips execution when database has 30 or more ads without force flag', function () {
     Item::factory()->count(30)->create();
 
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldNotReceive('getToken');
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldNotReceive('execute');
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(30);
@@ -86,11 +121,20 @@ it('skips execution when database has 30 or more ads without force flag', functi
 it('executes when database has 30+ ads with force flag', function () {
     Item::factory()->count(50)->create();
 
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('seller-id', 30)
+        ->with('seller-id', 'test-token', 30)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(50);
@@ -106,9 +150,20 @@ it('executes when database has 30+ ads with force flag', function () {
 it('displays current ad count', function () {
     Item::factory()->count(15)->create();
 
-    $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
-    $mockUseCase->shouldReceive('execute')->once();
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
 
+    $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
+    $mockUseCase->shouldReceive('execute')
+        ->with('seller-id', 'test-token', 30)
+        ->once();
+
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(15);
@@ -119,10 +174,20 @@ it('displays current ad count', function () {
 });
 
 it('catches and handles exceptions from use case', function () {
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
+        ->with('seller-id', 'test-token', 30)
         ->andThrow(new Exception('API connection failed'));
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(0);
@@ -133,9 +198,20 @@ it('catches and handles exceptions from use case', function () {
 });
 
 it('shows message about jobs processing when successful', function () {
-    $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
-    $mockUseCase->shouldReceive('execute')->once();
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
 
+    $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
+    $mockUseCase->shouldReceive('execute')
+        ->with('seller-id', 'test-token', 30)
+        ->once();
+
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(0);
@@ -146,11 +222,20 @@ it('shows message about jobs processing when successful', function () {
 });
 
 it('displays seller id being fetched', function () {
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('specific-seller-999', 30)
+        ->with('specific-seller-999', 'test-token', 30)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(0);
@@ -161,11 +246,20 @@ it('displays seller id being fetched', function () {
 });
 
 it('converts limit option to integer', function () {
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('seller-id', 75)
+        ->with('seller-id', 'test-token', 75)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(0);
@@ -180,11 +274,20 @@ it('converts limit option to integer', function () {
 it('returns success when ads count is less than 30', function () {
     Item::factory()->count(29)->create();
 
+    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
+    $mockAuthClient->shouldReceive('getToken')
+        ->once()
+        ->andReturn([
+            'inactive_token' => 0,
+            'access_token' => 'test-token',
+        ]);
+
     $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
     $mockUseCase->shouldReceive('execute')
-        ->with('seller-id', 30)
+        ->with('seller-id', 'test-token', 30)
         ->once();
 
+    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
     expect(Item::count())->toBe(29);
