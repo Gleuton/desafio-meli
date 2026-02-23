@@ -7,12 +7,32 @@ use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
+use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 
 function createResultsWithIds(int $start, int $count): array
 {
     return collect(range($start, $start + $count - 1))
         ->map(fn ($i) => ['id' => "ID_$i"])
         ->toArray();
+}
+
+function createRepositoryMock(?int $expectedCreatePendingCalls = null): ItemRepositoryInterface
+{
+    $repository = Mockery::mock(ItemRepositoryInterface::class);
+
+    if ($expectedCreatePendingCalls !== null) {
+        $repository->shouldReceive('createPending')
+            ->times($expectedCreatePendingCalls)
+            ->with(Mockery::type('string'));
+
+        return $repository;
+    }
+
+    $repository->shouldReceive('createPending')
+        ->zeroOrMoreTimes()
+        ->with(Mockery::type('string'));
+
+    return $repository;
 }
 
 it('dispatches messages respecting limit', function () {
@@ -41,7 +61,9 @@ it('dispatches messages respecting limit', function () {
         ->times(10)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(10);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 10);
 });
@@ -61,7 +83,9 @@ it('returns early when token is inactive', function () {
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
     $dispatcher->shouldNotReceive('dispatch');
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(0);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 10);
 });
@@ -92,7 +116,9 @@ it('increments offset correctly for pagination', function () {
         ->times(15)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(15);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 15);
 });
@@ -128,7 +154,9 @@ it('ignores items without id and does not dispatch them', function () {
         ->times(3)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(3);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 10);
 });
@@ -156,7 +184,9 @@ it('stops pagination when results are empty', function () {
         ->times(3)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(3);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 100);
 });
@@ -182,7 +212,9 @@ it('stops exactly at the specified limit', function () {
         ->times(7)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(7);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 7);
 });
@@ -211,13 +243,17 @@ it('dispatches ProcessItemMessage with correct item id and token', function () {
 
     $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
     $dispatcher->shouldReceive('dispatch')
-        ->with(Mockery::on(function (ProcessItemMessage $message) use ($token) {
-            return $message->accessToken === $token
-                && in_array($message->itemId, ['ITEM_ABC_123', 'ITEM_XYZ_789']);
-        }))
+        ->with(
+            Mockery::on(function (ProcessItemMessage $message) use ($token) {
+                return $message->accessToken === $token
+                    && in_array($message->itemId, ['ITEM_ABC_123', 'ITEM_XYZ_789']);
+            })
+        )
         ->twice();
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(2);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute($sellerId, 2);
 });
@@ -246,7 +282,9 @@ it('handles multiple pagination pages correctly', function () {
         ->times(20)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(20);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 20);
 });
@@ -272,7 +310,9 @@ it('stops iteration when limit is smaller than available results', function () {
         ->times(7)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(7);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 7);
 });
@@ -304,7 +344,9 @@ it('uses default max ads of 30 when not specified', function () {
         ->times(30)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(30);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392');
 });
@@ -344,7 +386,9 @@ it('correctly handles mixed valid and invalid items across pages', function () {
         ->times(7)
         ->with(Mockery::type(ProcessItemMessage::class));
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher);
+    $repository = createRepositoryMock(7);
+
+    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
 
     $useCase->execute('252254392', 10);
 });
