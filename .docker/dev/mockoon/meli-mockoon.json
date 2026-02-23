@@ -1,0 +1,421 @@
+{
+  "uuid": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "lastMigration": 33,
+  "name": "Meli API Mock",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3001,
+  "hostname": "",
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "type": "http",
+      "documentation": "GET /traymeli/sellers - Lista sellers. Resposta: 404 Bad request. Ver API.md.",
+      "method": "get",
+      "endpoint": "traymeli/sellers",
+      "responses": [
+        {
+          "uuid": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b",
+          "body": "{\n  \"status\": 400,\n  \"message\": \"Bad request\"\n}",
+          "latency": 40,
+          "statusCode": 404,
+          "label": "404 - Not Found",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": "RANDOM",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "5dc7f957-b27d-41e1-8fda-c09984b4607a",
+      "type": "http",
+      "documentation": "GET /traymeli/sellers/252254392 - Dados do seller. Resposta aleatória: 200 (token ativo/inativo) ou 429. Ver API.md.",
+      "method": "get",
+      "endpoint": "traymeli/sellers/252254392",
+      "responses": [
+        {
+          "uuid": "11f5abb4-a445-4e43-a74a-8ef543f585a1",
+          "body": "{\n  \"store_id\": \"5882832\",\n  \"user_id\": 2522543922,\n  \"access_token\": \"APP_USR-022012-62d26adf50fa550ebe1a578f66c3d53a-252254392\",\n  \"inactive_token\": 0\n}",
+          "latency": 50,
+          "statusCode": 200,
+          "label": "200 - Token ativo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "e944cf41-bf45-40a5-a9c1-c6b3d9af34d0",
+          "body": "{\n  \"store_id\": \"5882832\",\n  \"user_id\": 2522543922,\n  \"access_token\": \"APP_USR-000000-62d26adf50fa550ebe1a578f66c3d53a-252254392\",\n  \"inactive_token\": 1\n}",
+          "latency": 50,
+          "statusCode": 200,
+          "label": "200 - Token inativo",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "bf91d93e-153b-44fb-b3b5-d0f94cc4a126",
+          "body": "{\n  \"status\": 429,\n  \"message\": \"too many requests\"\n}",
+          "latency": 30,
+          "statusCode": 429,
+          "label": "429 - Too Many Requests",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": "RANDOM",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a9b8c7d6-e5f4-4a3b-2c1d-0e9f8a7b6c5d",
+      "type": "http",
+      "documentation": "GET /traymeli/sellers/:id - Seller por ID. 404 se id != 252254392. ID 252254392 usa a rota exata acima. Ver API.md.",
+      "method": "get",
+      "endpoint": "traymeli/sellers/:id",
+      "responses": [
+        {
+          "uuid": "b8c7d6e5-f4a3-4b2c-1d0e-9f8a7b6c5d4e",
+          "body": "{\n  \"status\": 404,\n  \"message\": \"Not Found\"\n}",
+          "latency": 70,
+          "statusCode": 404,
+          "label": "404 - ID não encontrado",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "252254392",
+              "invert": true,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "979c5394-1897-4d72-9365-2ecf9afb8c4c",
+          "body": "{\n  \"status\": 404,\n  \"message\": \"Not Found\"\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "404 - default",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "42559cc7-71c8-49ca-9197-316983b23828",
+      "type": "http",
+      "documentation": "GET /mercadolibre/sites/MLB/search - Busca anúncios. Header: Authorization: Bearer APP_USR-022012-62d26adf50fa550ebe1a578f66c3d53a-252254392. seller_id obrigatório. Paginação: offset 0-25, total 30 itens. 401 se token ausente/inválido; 400 se sem seller_id. Ver API.md.",
+      "method": "get",
+      "endpoint": "mercadolibre/sites/MLB/search",
+      "responses": [
+        {
+          "uuid": "c1e76fc2-7501-453d-bb45-b135cd843396",
+          "body": "{\n  \"message\": \"UNAUTHORIZED\",\n  \"error\": \"unauthorized\",\n  \"status\": 401\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "401 - token ausente ou inválido",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "authorization",
+              "value": "",
+              "invert": false,
+              "operator": "null"
+            },
+            {
+              "target": "header",
+              "modifier": "authorization",
+              "value": "Bearer APP_USR-022012-62d26adf50fa550ebe1a578f66c3d53a-252254392",
+              "invert": true,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "b0d65fb1-6490-442c-aa34-a024bcb73285",
+          "body": "{\n  \"status\": 400,\n  \"message\": \"seller_id is required\"\n}",
+          "latency": 0,
+          "statusCode": 400,
+          "label": "400 - sem seller_id",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "query",
+              "modifier": "seller_id",
+              "value": "",
+              "invert": false,
+              "operator": "null"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "50d65fb1-6490-442c-aa34-a024bcb73288",
+          "body": "{\n  \"site_id\": \"MLB\",\n  \"seller_id\": \"252254392\",\n  \"query\": null,\n  \"paging\": {\n    \"total\": 30,\n    \"offset\": {{queryParam 'offset' '0'}},\n    \"limit\": {{queryParam 'limit' '5'}}\n  },\n  \"results\": [\n    {{#switch (queryParam 'offset' '0')}}\n      {{#case '0'}}\"MLB009000001\",\"MLB009000002\",\"MLB009000003\",\"MLB009000004\",\"MLB009000005\"{{/ case}}\n      {{#case '1'}}\"MLB009000002\",\"MLB009000003\",\"MLB009000004\",\"MLB009000005\",\"MLB009000006\"{{/ case}}\n      {{#case '2'}}\"MLB009000003\",\"MLB009000004\",\"MLB009000005\",\"MLB009000006\",\"MLB009000007\"{{/ case}}\n      {{#case '3'}}\"MLB009000004\",\"MLB009000005\",\"MLB009000006\",\"MLB009000007\",\"MLB009000008\"{{/ case}}\n      {{#case '4'}}\"MLB009000005\",\"MLB009000006\",\"MLB009000007\",\"MLB009000008\",\"MLB009000009\"{{/ case}}\n      {{#case '5'}}\"MLB009000006\",\"MLB009000007\",\"MLB009000008\",\"MLB009000009\",\"MLB009000010\"{{/ case}}\n      {{#case '6'}}\"MLB009000007\",\"MLB009000008\",\"MLB009000009\",\"MLB009000010\",\"MLB009000011\"{{/ case}}\n      {{#case '7'}}\"MLB009000008\",\"MLB009000009\",\"MLB009000010\",\"MLB009000011\",\"MLB009000012\"{{/ case}}\n      {{#case '8'}}\"MLB009000009\",\"MLB009000010\",\"MLB009000011\",\"MLB009000012\",\"MLB009000013\"{{/ case}}\n      {{#case '9'}}\"MLB009000010\",\"MLB009000011\",\"MLB009000012\",\"MLB009000013\",\"MLB009000014\"{{/ case}}\n      {{#case '10'}}\"MLB009000011\",\"MLB009000012\",\"MLB009000013\",\"MLB009000014\",\"MLB009000015\"{{/ case}}\n      {{#case '11'}}\"MLB009000012\",\"MLB009000013\",\"MLB009000014\",\"MLB009000015\",\"MLB009000016\"{{/ case}}\n      {{#case '12'}}\"MLB009000013\",\"MLB009000014\",\"MLB009000015\",\"MLB009000016\",\"MLB009000017\"{{/ case}}\n      {{#case '13'}}\"MLB009000014\",\"MLB009000015\",\"MLB009000016\",\"MLB009000017\",\"MLB009000018\"{{/ case}}\n      {{#case '14'}}\"MLB009000015\",\"MLB009000016\",\"MLB009000017\",\"MLB009000018\",\"MLB009000019\"{{/ case}}\n      {{#case '15'}}\"MLB009000016\",\"MLB009000017\",\"MLB009000018\",\"MLB009000019\",\"MLB009000020\"{{/ case}}\n      {{#case '16'}}\"MLB009000017\",\"MLB009000018\",\"MLB009000019\",\"MLB009000020\",\"MLB009000021\"{{/ case}}\n      {{#case '17'}}\"MLB009000018\",\"MLB009000019\",\"MLB009000020\",\"MLB009000021\",\"MLB009000022\"{{/ case}}\n      {{#case '18'}}\"MLB009000019\",\"MLB009000020\",\"MLB009000021\",\"MLB009000022\",\"MLB009000023\"{{/ case}}\n      {{#case '19'}}\"MLB009000020\",\"MLB009000021\",\"MLB009000022\",\"MLB009000023\",\"MLB009000024\"{{/ case}}\n      {{#case '20'}}\"MLB009000021\",\"MLB009000022\",\"MLB009000023\",\"MLB009000024\",\"MLB009000025\"{{/ case}}\n      {{#case '21'}}\"MLB009000022\",\"MLB009000023\",\"MLB009000024\",\"MLB009000025\",\"MLB009000026\"{{/ case}}\n      {{#case '22'}}\"MLB009000023\",\"MLB009000024\",\"MLB009000025\",\"MLB009000026\",\"MLB009000027\"{{/ case}}\n      {{#case '23'}}\"MLB009000024\",\"MLB009000025\",\"MLB009000026\",\"MLB009000027\",\"MLB009000028\"{{/ case}}\n      {{#case '24'}}\"MLB009000025\",\"MLB009000026\",\"MLB009000027\",\"MLB009000028\",\"MLB009000029\"{{/ case}}\n      {{#case '25'}}\"MLB009000026\",\"MLB009000027\",\"MLB009000028\",\"MLB009000029\",\"MLB009000030\"{{/ case}}\n      {{#default}}{{/ default}}\n    {{/ switch}}\n  ]\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 - paginação dinâmica (offset 0-25)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a678d031-946b-445f-8d06-b3262a2eeb1c",
+      "type": "http",
+      "documentation": "GET /mercadolivre/items/:id - Detalhe do item. Header: Authorization: Bearer APP_USR-022012-62d26adf50fa550ebe1a578f66c3d53a-252254392. IDs válidos: MLB009000001 a MLB009000030. 401 se token ausente/inválido; 404 se ID não existe. Ver API.md.",
+      "method": "get",
+      "endpoint": "mercadolibre/items/:id",
+      "responses": [
+        {
+          "uuid": "30f8257f-309b-41b1-89e0-87c20d08a86d",
+          "body": "{\n  \"message\": \"UNAUTHORIZED\",\n  \"error\": \"unauthorized\",\n  \"status\": 401\n}",
+          "latency": 0,
+          "statusCode": 401,
+          "label": "401 - token ausente ou inválido",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "authorization",
+              "value": "",
+              "invert": false,
+              "operator": "null"
+            },
+            {
+              "target": "header",
+              "modifier": "authorization",
+              "value": "Bearer APP_USR-022012-62d26adf50fa550ebe1a578f66c3d53a-252254392",
+              "invert": true,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "20f8257f-309b-41b1-89e0-87c20d08a86c",
+          "body": "{\n  \"message\": \"Item with id {{urlParam 'id'}} not found\",\n  \"error\": \"not_found\",\n  \"status\": 404,\n  \"cause\": []\n}",
+          "latency": 0,
+          "statusCode": 404,
+          "label": "404 - ID não existe",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [
+            {
+              "target": "params",
+              "modifier": "id",
+              "value": "^(MLB00900000[1-9]|MLB00900001[0-9]|MLB00900002[0-9]|MLB009000030)$",
+              "invert": true,
+              "operator": "regex"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "5c0e7ff3-19eb-49a6-af77-dddaa1fc18ec",
+          "body": "{\n  \"id\": \"{{urlParam 'id'}}\",\n  \"title\": \"{{#switch (urlParam 'id')}}{{#case 'MLB009000001'}}Notebook Dell Inspiron 15 3000 Intel Core i5 8GB{{/ case}}{{#case 'MLB009000002'}}Teclado Mecânico Redragon RGB Switch Blue USB{{/ case}}{{#case 'MLB009000003'}}Mouse Logitech M170 Wireless 2.4GHz{{/ case}}{{#case 'MLB009000004'}}Monitor LG 24 pol Full HD IPS 75Hz HDMI VGA{{/ case}}{{#case 'MLB009000005'}}Webcam Full HD 1080p Microfone Embutido USB{{/ case}}{{#case 'MLB009000006'}}Headset Gamer HyperX Cloud Stereo{{/ case}}{{#case 'MLB009000007'}}SSD Kingston 480GB SATA III Leitura 500MB{{/ case}}{{#case 'MLB009000008'}}Memória RAM 16GB DDR4 2666MHz Crucial{{/ case}}{{#case 'MLB009000009'}}Cabo HDMI 2.0 4K 60Hz 1.5m{{/ case}}{{#case 'MLB009000010'}}Hub USB 3.0 4 Portas Expansão Notebook{{/ case}}{{#case 'MLB009000011'}}Cooler para Notebook Suporte Ergonômico{{/ case}}{{#case 'MLB009000012'}}Mouse Pad Gamer XXL 90x40cm{{/ case}}{{#case 'MLB009000013'}}Adaptador Wi-Fi USB 300Mbps Dual Band{{/ case}}{{#case 'MLB009000014'}}Fonte ATX 500W 80 Plus Bronze PFC Ativo{{/ case}}{{#case 'MLB009000015'}}Gabinete Gamer com LED e 3 Fans (pausado){{/ case}}{{#case 'MLB009000016'}}Placa de Vídeo GTX 1650 4GB GDDR6{{/ case}}{{#case 'MLB009000017'}}Processador Intel Core i3 10100 4.3GHz{{/ case}}{{#case 'MLB009000018'}}Placa Mãe H510M DDR4 mATX{{/ case}}{{#case 'MLB009000019'}}Water Cooler 120mm RGB para Processador{{/ case}}{{#case 'MLB009000020'}}Kit 2x8GB RAM DDR4 3200MHz (pausado){{/ case}}{{#case 'MLB009000021'}}M.2 NVMe 256GB Leitura 3500MB/s{{/ case}}{{#case 'MLB009000022'}}Leitor de Cartão SD USB 3.0 5 em 1{{/ case}}{{#case 'MLB009000023'}}Suporte para Monitor Articulado VESA{{/ case}}{{#case 'MLB009000024'}}Organizador de Cabos com Abraçadeiras{{/ case}}{{#case 'MLB009000025'}}Filtro de Linha 6 Tomadas com USB{{/ case}}{{#case 'MLB009000026'}}Webcam 4K com Tripé e Cortina (pausado){{/ case}}{{#case 'MLB009000027'}}Microfone Condensador USB Podcast{{/ case}}{{#case 'MLB009000028'}}Ring Light LED 18cm com Tripé{{/ case}}{{#case 'MLB009000029'}}Mesa Digitalizadora 10x6 polegadas{{/ case}}{{#case 'MLB009000030'}}Pen Drive 128GB USB 3.2 Transferência 150MB{{/ case}}{{#default}}Produto Informática{{/ default}}{{/ switch}}\",\n  \"status\": \"{{#switch (urlParam 'id')}}{{#case 'MLB009000003'}}paused{{/ case}}{{#case 'MLB009000006'}}paused{{/ case}}{{#case 'MLB009000009'}}paused{{/ case}}{{#case 'MLB009000012'}}paused{{/ case}}{{#case 'MLB009000015'}}paused{{/ case}}{{#case 'MLB009000020'}}paused{{/ case}}{{#case 'MLB009000026'}}paused{{/ case}}{{#default}}active{{/ default}}{{/ switch}}\",\n  \"created\": \"{{#switch (urlParam 'id')}}{{#case 'MLB009000001'}}2026-01-02T08:15:00-03:00{{/ case}}{{#case 'MLB009000002'}}2026-01-05T09:30:00-03:00{{/ case}}{{#case 'MLB009000003'}}2026-01-07T10:00:00-03:00{{/ case}}{{#case 'MLB009000004'}}2026-01-08T11:20:00-03:00{{/ case}}{{#case 'MLB009000005'}}2026-01-10T14:45:00-03:00{{/ case}}{{#case 'MLB009000006'}}2026-01-12T08:00:00-03:00{{/ case}}{{#case 'MLB009000007'}}2026-01-14T16:30:00-03:00{{/ case}}{{#case 'MLB009000008'}}2026-01-16T09:10:00-03:00{{/ case}}{{#case 'MLB009000009'}}2026-01-18T13:00:00-03:00{{/ case}}{{#case 'MLB009000010'}}2026-01-20T07:45:00-03:00{{/ case}}{{#case 'MLB009000011'}}2026-01-22T12:15:00-03:00{{/ case}}{{#case 'MLB009000012'}}2026-01-24T15:30:00-03:00{{/ case}}{{#case 'MLB009000013'}}2026-01-26T10:00:00-03:00{{/ case}}{{#case 'MLB009000014'}}2026-01-27T09:00:00-03:00{{/ case}}{{#case 'MLB009000015'}}2026-01-28T11:30:00-03:00{{/ case}}{{#case 'MLB009000016'}}2026-01-28T14:00:00-03:00{{/ case}}{{#case 'MLB009000017'}}2026-01-29T08:45:00-03:00{{/ case}}{{#case 'MLB009000018'}}2026-01-29T10:20:00-03:00{{/ case}}{{#case 'MLB009000019'}}2026-01-29T16:00:00-03:00{{/ case}}{{#case 'MLB009000020'}}2026-01-30T09:15:00-03:00{{/ case}}{{#case 'MLB009000021'}}2026-01-30T11:00:00-03:00{{/ case}}{{#case 'MLB009000022'}}2026-01-30T13:30:00-03:00{{/ case}}{{#case 'MLB009000023'}}2026-01-30T15:00:00-03:00{{/ case}}{{#case 'MLB009000024'}}2026-01-30T17:20:00-03:00{{/ case}}{{#case 'MLB009000025'}}2026-01-31T08:00:00-03:00{{/ case}}{{#case 'MLB009000026'}}2026-01-31T10:45:00-03:00{{/ case}}{{#case 'MLB009000027'}}2026-01-31T12:30:00-03:00{{/ case}}{{#case 'MLB009000028'}}2026-01-31T14:15:00-03:00{{/ case}}{{#case 'MLB009000029'}}2026-01-31T16:00:00-03:00{{/ case}}{{#case 'MLB009000030'}}2026-01-31T18:00:00-03:00{{/ case}}{{#default}}2026-01-15T12:00:00-03:00{{/ default}}{{/ switch}}\",\n  \"updated\": \"{{#switch (urlParam 'id')}}{{#case 'MLB009000001'}}2026-01-18T14:20:00-03:00{{/ case}}{{#case 'MLB009000002'}}2026-01-19T11:00:00-03:00{{/ case}}{{#case 'MLB009000003'}}2026-01-20T09:45:00-03:00{{/ case}}{{#case 'MLB009000004'}}2026-01-21T16:30:00-03:00{{/ case}}{{#case 'MLB009000005'}}2026-01-22T08:15:00-03:00{{/ case}}{{#case 'MLB009000006'}}2026-01-23T13:00:00-03:00{{/ case}}{{#case 'MLB009000007'}}2026-01-24T10:30:00-03:00{{/ case}}{{#case 'MLB009000008'}}2026-01-25T15:45:00-03:00{{/ case}}{{#case 'MLB009000009'}}2026-01-26T11:20:00-03:00{{/ case}}{{#case 'MLB009000010'}}2026-01-27T14:00:00-03:00{{/ case}}{{#case 'MLB009000011'}}2026-01-28T09:30:00-03:00{{/ case}}{{#case 'MLB009000012'}}2026-01-29T17:15:00-03:00{{/ case}}{{#case 'MLB009000013'}}2026-01-30T12:45:00-03:00{{/ case}}{{#case 'MLB009000014'}}2026-01-31T09:00:00-03:00{{/ case}}{{#case 'MLB009000015'}}2026-01-31T11:30:00-03:00{{/ case}}{{#case 'MLB009000016'}}2026-01-31T14:00:00-03:00{{/ case}}{{#case 'MLB009000017'}}2026-01-31T16:30:00-03:00{{/ case}}{{#case 'MLB009000018'}}2026-02-01T08:00:00-03:00{{/ case}}{{#case 'MLB009000019'}}2026-02-01T10:15:00-03:00{{/ case}}{{#case 'MLB009000020'}}2026-02-01T13:00:00-03:00{{/ case}}{{#case 'MLB009000021'}}2026-02-01T15:45:00-03:00{{/ case}}{{#case 'MLB009000022'}}2026-02-01T17:20:00-03:00{{/ case}}{{#case 'MLB009000023'}}2026-02-02T09:30:00-03:00{{/ case}}{{#case 'MLB009000024'}}2026-02-02T12:00:00-03:00{{/ case}}{{#case 'MLB009000025'}}2026-02-02T14:30:00-03:00{{/ case}}{{#case 'MLB009000026'}}2026-02-02T16:45:00-03:00{{/ case}}{{#case 'MLB009000027'}}2026-02-02T18:00:00-03:00{{/ case}}{{#case 'MLB009000028'}}2026-02-03T08:15:00-03:00{{/ case}}{{#case 'MLB009000029'}}2026-02-03T11:00:00-03:00{{/ case}}{{#case 'MLB009000030'}}2026-02-03T14:00:00-03:00{{/ case}}{{#default}}2026-01-25T12:00:00-03:00{{/ default}}{{/ switch}}\"\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "200 - item válido (001 a 030)",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e"
+    },
+    {
+      "type": "route",
+      "uuid": "5dc7f957-b27d-41e1-8fda-c09984b4607a"
+    },
+    {
+      "type": "route",
+      "uuid": "a9b8c7d6-e5f4-4a3b-2c1d-0e9f8a7b6c5d"
+    },
+    {
+      "type": "route",
+      "uuid": "42559cc7-71c8-49ca-9197-316983b23828"
+    },
+    {
+      "type": "route",
+      "uuid": "a678d031-946b-445f-8d06-b3262a2eeb1c"
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    },
+    {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    },
+    {
+      "key": "Access-Control-Allow-Methods",
+      "value": "GET,PATCH,HEAD,OPTIONS"
+    },
+    {
+      "key": "Access-Control-Allow-Headers",
+      "value": "Content-Type, Origin, Accept, Authorization, Content-Length, X-Requested-With"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "data": [],
+  "callbacks": []
+}

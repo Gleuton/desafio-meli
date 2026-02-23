@@ -41,5 +41,14 @@ services:
     image: redis:alpine
     container_name: desafio_redis
 
+  desafio-mockoon:
+    image: mockoon/cli:latest
+    container_name: desafio_mockoon
+    command: ["-d", "/data/meli-mockoon.json", "-p", "3001"]
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./.docker/dev/mockoon/meli-mockoon.json:/data/meli-mockoon.json:ro
+
 volumes:
   desafio_db_data:
