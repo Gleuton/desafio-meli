@@ -46,7 +46,7 @@ class FetchSellerAdsUseCase
     }
 
     /**
-     * @return array<string, mixed>[]
+     * @return array<int, string> Array of item IDs
      *
      * @throws GuzzleException
      */
@@ -63,16 +63,21 @@ class FetchSellerAdsUseCase
     }
 
     /**
-     * @param  array<string, mixed>[]  $results
+     * @param  array<int, string>  $results  Array of item IDs
      */
     private function processResults(array $results, string $token, int $dispatchedCount, int $maxAds): int
     {
-        /** @var string $item */
-        foreach ($results as $item) {
-            $this->repository->createPending($item);
+        foreach ($results as $itemId) {
+            if (! is_string($itemId) || $itemId === '') {
+                continue;
+            }
+
+            $this->repository->createPending($itemId);
+
             $this->queueDispatcher->dispatch(
-                new ProcessItemMessage($item, $token)
+                new ProcessItemMessage($itemId, $token)
             );
+
             $dispatchedCount++;
 
             if ($dispatchedCount >= $maxAds) {

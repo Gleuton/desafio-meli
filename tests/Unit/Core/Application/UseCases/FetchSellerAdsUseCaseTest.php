@@ -5,14 +5,13 @@ declare(strict_types=1);
 use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
-use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 
 function createResultsWithIds(int $start, int $count): array
 {
     return collect(range($start, $start + $count - 1))
-        ->map(fn ($i) => ['id' => "ID_$i"])
+        ->map(fn ($i) => "ID_$i")
         ->toArray();
 }
 
@@ -36,14 +35,6 @@ function createRepositoryMock(?int $expectedCreatePendingCalls = null): ItemRepo
 }
 
 it('dispatches messages respecting limit', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
     $searchClient->shouldReceive('searchBySeller')
         ->twice()
@@ -63,42 +54,12 @@ it('dispatches messages respecting limit', function () {
 
     $repository = createRepositoryMock(10);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 10);
-});
-
-it('returns early when token is inactive', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 1,
-            'access_token' => 'fake-token',
-        ]);
-
-    $searchClient = Mockery::mock(MeliSearchClient::class);
-    $searchClient->shouldNotReceive('searchBySeller');
-
-    $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
-    $dispatcher->shouldNotReceive('dispatch');
-
-    $repository = createRepositoryMock(0);
-
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
-
-    $useCase->execute('252254392', 10);
+    $useCase->execute('252254392', 'fake-token', 10);
 });
 
 it('increments offset correctly for pagination', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
 
     $searchClient->shouldReceive('searchBySeller')
@@ -118,31 +79,23 @@ it('increments offset correctly for pagination', function () {
 
     $repository = createRepositoryMock(15);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 15);
+    $useCase->execute('252254392', 'fake-token', 15);
 });
 
 it('ignores items without id and does not dispatch them', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
     $searchClient->shouldReceive('searchBySeller')
         ->times(2)
         ->andReturn(
             [
                 'results' => [
-                    ['id' => 'ID_1'],
-                    ['name' => 'Item without ID'],
-                    ['id' => 'ID_2'],
-                    ['price' => 100],
-                    ['id' => 'ID_3'],
+                    'ID_1',
+                    '',
+                    'ID_2',
+                    123,
+                    'ID_3',
                 ],
             ],
             ['results' => []]
@@ -156,20 +109,12 @@ it('ignores items without id and does not dispatch them', function () {
 
     $repository = createRepositoryMock(3);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 10);
+    $useCase->execute('252254392', 'fake-token', 10);
 });
 
 it('stops pagination when results are empty', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
     $searchClient->shouldReceive('searchBySeller')
         ->once()
@@ -186,20 +131,12 @@ it('stops pagination when results are empty', function () {
 
     $repository = createRepositoryMock(3);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 100);
+    $useCase->execute('252254392', 'fake-token', 100);
 });
 
 it('stops exactly at the specified limit', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
 
     $searchClient->shouldReceive('searchBySeller')
@@ -214,30 +151,22 @@ it('stops exactly at the specified limit', function () {
 
     $repository = createRepositoryMock(7);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 7);
+    $useCase->execute('252254392', 'fake-token', 7);
 });
 
 it('dispatches ProcessItemMessage with correct item id and token', function () {
     $sellerId = '252254392';
     $token = 'test-access-token-123';
 
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => $token,
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
     $searchClient->shouldReceive('searchBySeller')
         ->once()
         ->andReturn([
             'results' => [
-                ['id' => 'ITEM_ABC_123'],
-                ['id' => 'ITEM_XYZ_789'],
+                'ITEM_ABC_123',
+                'ITEM_XYZ_789',
             ],
         ]);
 
@@ -253,20 +182,12 @@ it('dispatches ProcessItemMessage with correct item id and token', function () {
 
     $repository = createRepositoryMock(2);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute($sellerId, 2);
+    $useCase->execute($sellerId, $token, 2);
 });
 
 it('handles multiple pagination pages correctly', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
 
     $searchClient->shouldReceive('searchBySeller')
@@ -284,20 +205,12 @@ it('handles multiple pagination pages correctly', function () {
 
     $repository = createRepositoryMock(20);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 20);
+    $useCase->execute('252254392', 'fake-token', 20);
 });
 
 it('stops iteration when limit is smaller than available results', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
 
     $searchClient->shouldReceive('searchBySeller')
@@ -312,20 +225,12 @@ it('stops iteration when limit is smaller than available results', function () {
 
     $repository = createRepositoryMock(7);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 7);
+    $useCase->execute('252254392', 'fake-token', 7);
 });
 
 it('uses default max ads of 30 when not specified', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
 
     $searchClient->shouldReceive('searchBySeller')
@@ -346,20 +251,12 @@ it('uses default max ads of 30 when not specified', function () {
 
     $repository = createRepositoryMock(30);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392');
+    $useCase->execute('252254392', 'fake-token');
 });
 
 it('correctly handles mixed valid and invalid items across pages', function () {
-    $authClient = Mockery::mock(MeliAuthClient::class);
-    $authClient->shouldReceive('getToken')
-        ->once()
-        ->andReturn([
-            'inactive_token' => 0,
-            'access_token' => 'fake-token',
-        ]);
-
     $searchClient = Mockery::mock(MeliSearchClient::class);
 
     $searchClient->shouldReceive('searchBySeller')
@@ -367,11 +264,11 @@ it('correctly handles mixed valid and invalid items across pages', function () {
         ->andReturn(
             [
                 'results' => [
-                    ['id' => 'ID_1'],
-                    ['name' => 'No ID'],
-                    ['id' => 'ID_2'],
-                    ['price' => 100],
-                    ['id' => 'ID_3'],
+                    'ID_1',
+                    '',
+                    'ID_2',
+                    null,
+                    'ID_3',
                 ],
             ],
             [
@@ -388,7 +285,7 @@ it('correctly handles mixed valid and invalid items across pages', function () {
 
     $repository = createRepositoryMock(7);
 
-    $useCase = new FetchSellerAdsUseCase($authClient, $searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
 
-    $useCase->execute('252254392', 10);
+    $useCase->execute('252254392', 'fake-token', 10);
 });
