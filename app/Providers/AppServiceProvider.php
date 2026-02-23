@@ -8,6 +8,8 @@ use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
 use App\Core\Infrastructure\Http\GuzzleHttpClient;
+use App\Core\Infrastructure\Persistence\EloquentItemRepository;
+use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Core\Infrastructure\Queue\LaravelQueueDispatcher;
 use Illuminate\Support\ServiceProvider;
 
@@ -45,6 +47,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             QueueDispatcherInterface::class,
             LaravelQueueDispatcher::class
+        );
+
+        $this->app->bind(
+            ItemRepositoryInterface::class,
+            EloquentItemRepository::class
         );
     }
 
