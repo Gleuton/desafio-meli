@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Jobs\ProcessItemJob;
@@ -30,8 +29,7 @@ it('successfully handles item processing', function () {
         ->with('ITEM_123')
         ->once();
 
-    $message = new ProcessItemMessage('ITEM_123', 'access-token-123');
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob('ITEM_123', 'access-token-123');
 
     $job->handle($mockItemsClient, $mockRepository);
 });
@@ -48,10 +46,9 @@ it('marks item as failed when client throws exception', function () {
         ->with('ITEM_456', 'API Error')
         ->once();
 
-    $message = new ProcessItemMessage('ITEM_456', 'access-token-456');
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob('ITEM_456', 'access-token-456');
 
-    expect(fn () => $job->handle($mockItemsClient, $mockRepository))
+    expect(static fn () => $job->handle($mockItemsClient, $mockRepository))
         ->toThrow(Exception::class);
 });
 
@@ -70,17 +67,12 @@ it('marks item as failed before re-throwing exception', function () {
         })
         ->once();
 
-    $message = new ProcessItemMessage('ITEM_789', 'token');
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob('ITEM_789', 'token');
 
-    try {
-        $job->handle($mockItemsClient, $mockRepository);
-    } catch (RuntimeException) {
-        // Expected
-    }
+    $job->handle($mockItemsClient, $mockRepository);
 
     expect($callOrder)->toBe(['markAsFailed']);
-});
+})->throws(RuntimeException::class);
 
 it('passes correct item id and access token to client', function () {
     $itemId = 'ITEM_SPECIFIC_123';
@@ -96,15 +88,13 @@ it('passes correct item id and access token to client', function () {
     $mockRepository->shouldReceive('saveFromApi')->once();
     $mockRepository->shouldReceive('markAsProcessed')->once();
 
-    $message = new ProcessItemMessage($itemId, $accessToken);
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob($itemId, $accessToken);
 
     $job->handle($mockItemsClient, $mockRepository);
 });
 
 it('has correct job configuration', function () {
-    $message = new ProcessItemMessage('ITEM_123', 'token');
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob('ITEM_123', 'token');
 
     expect($job->tries)->toBe(3)
         ->and($job->timeout)->toBe(60)
@@ -116,11 +106,10 @@ it('stores message data in constructor', function () {
     $itemId = 'ITEM_CONSTRUCTOR';
     $accessToken = 'token-constructor';
 
-    $message = new ProcessItemMessage($itemId, $accessToken);
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob($itemId, $accessToken);
 
-    expect($job->message->itemId)->toBe($itemId)
-        ->and($job->message->accessToken)->toBe($accessToken);
+    expect($job->itemId)->toBe($itemId)
+        ->and($job->accessToken)->toBe($accessToken);
 });
 
 it('does not call save when client fails', function () {
@@ -132,15 +121,10 @@ it('does not call save when client fails', function () {
     $mockRepository->shouldNotReceive('saveFromApi');
     $mockRepository->shouldReceive('markAsFailed')->once();
 
-    $message = new ProcessItemMessage('ITEM_123', 'token');
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob('ITEM_123', 'token');
 
-    try {
-        $job->handle($mockItemsClient, $mockRepository);
-    } catch (Exception) {
-
-    }
-});
+    $job->handle($mockItemsClient, $mockRepository);
+})->throws(Exception::class);
 
 it('handles client returning complex item data', function () {
     $complexItemData = [
@@ -169,8 +153,7 @@ it('handles client returning complex item data', function () {
     $mockRepository->shouldReceive('markAsProcessed')
         ->once();
 
-    $message = new ProcessItemMessage('ITEM_COMPLEX', 'token');
-    $job = new ProcessItemJob($message);
+    $job = new ProcessItemJob('ITEM_COMPLEX', 'token');
 
     $job->handle($mockItemsClient, $mockRepository);
 });

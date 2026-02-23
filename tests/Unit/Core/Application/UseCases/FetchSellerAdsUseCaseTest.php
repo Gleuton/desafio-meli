@@ -174,8 +174,8 @@ it('dispatches ProcessItemMessage with correct item id and token', function () {
     $dispatcher->shouldReceive('dispatch')
         ->with(
             Mockery::on(function (ProcessItemJob $job) use ($token) {
-                return $job->message->accessToken === $token
-                    && in_array($job->message->itemId, ['ITEM_ABC_123', 'ITEM_XYZ_789']);
+                return $job->accessToken === $token
+                    && in_array($job->itemId, ['ITEM_ABC_123', 'ITEM_XYZ_789']);
             })
         )
         ->twice();

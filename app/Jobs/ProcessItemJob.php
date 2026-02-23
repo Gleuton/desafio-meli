@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Core\Application\Messages\ProcessItemMessage;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,7 +21,8 @@ class ProcessItemJob implements ShouldQueue
     public bool $failOnTimeout = true;
 
     public function __construct(
-        public readonly ProcessItemMessage $message
+        public readonly string $itemId,
+        public readonly string $accessToken,
     ) {}
 
     public function handle(
@@ -31,15 +31,15 @@ class ProcessItemJob implements ShouldQueue
     ): void {
         try {
             $itemData = $itemsClient->getItem(
-                itemId: $this->message->itemId,
-                accessToken: $this->message->accessToken
+                itemId: $this->itemId,
+                accessToken: $this->accessToken
             );
 
             $repository->saveFromApi($itemData);
-            $repository->markAsProcessed($this->message->itemId);
+            $repository->markAsProcessed($this->itemId);
         } catch (Throwable $e) {
             $repository->markAsFailed(
-                $this->message->itemId,
+                $this->itemId,
                 $e->getMessage()
             );
 
