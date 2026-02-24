@@ -12,7 +12,8 @@ class FetchMeliAdsCommand extends Command
 {
     protected $signature = 'meli:fetch-ads 
                             {--seller-id= : The seller ID to fetch ads from (optional, uses config if not provided)}
-                            {--limit=30 : Maximum number of ads to fetch}';
+                            {--limit=30 : Maximum number of ads to fetch}
+                            {--no-retry : Do not ask to retry on token failure}';
 
     protected $description = 'Fetch advertisements from Mercado Livre and queue them for processing';
 
@@ -38,7 +39,8 @@ class FetchMeliAdsCommand extends Command
         ItemRepositoryInterface $repository,
         MeliAuthClient $authClient,
         string $sellerId,
-        int $limit
+        int $limit,
+        int $retries = 0
     ): int {
         $this->info('Checking database for existing ads...');
         $currentCount = $repository->count();
@@ -59,12 +61,19 @@ class FetchMeliAdsCommand extends Command
                 $this->warn('Invalid or inactive token received from Meli Auth service.');
                 $this->warn('Reason: Token is inactive or not available');
                 $this->newLine();
+
+                if ($retries >= 3 || $this->option('no-retry')) {
+                    $this->warn('Skipping retry in non-retry mode or after max retries.');
+
+                    return self::SUCCESS;
+                }
+
                 $choice = $this->choice('Do you want to retry?', ['y' => 'Yes', 'n' => 'No'], 'Y');
 
                 if ($choice === 'y') {
                     $this->newLine();
 
-                    return $this->executeWithRetry($useCase, $repository, $authClient, $sellerId, $limit);
+                    return $this->executeWithRetry($useCase, $repository, $authClient, $sellerId, $limit, $retries + 1);
                 }
 
                 return self::SUCCESS;
