@@ -17,7 +17,7 @@ class ListItemsInputDTO
         return new self(
             $request->input('seller_id'),
             $request->input('page') ?? 1,
-            $request->input('per_page') ?? 15,
+            $request->input('per_page') ?? 30,
         );
     }
 }

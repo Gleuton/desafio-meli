@@ -48,7 +48,7 @@ it('returns empty list when no items exist', function () {
             'data' => [],
             'pagination' => [
                 'current_page' => 1,
-                'per_page' => 15,
+                'per_page' => 30,
                 'total' => 0,
                 'last_page' => 0,
             ],
