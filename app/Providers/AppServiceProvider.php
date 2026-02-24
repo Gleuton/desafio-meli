@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Core\Application\Contracts\LoggerInterface;
 use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Infrastructure\Http\Clients\MeliAuthClient;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
 use App\Core\Infrastructure\Http\GuzzleHttpClient;
+use App\Core\Infrastructure\Logging\LaravelLogger;
 use App\Core\Infrastructure\Persistence\EloquentItemRepository;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Core\Infrastructure\Queue\LaravelQueueDispatcher;
@@ -21,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(HttpClientInterface::class, GuzzleHttpClient::class);
+
+        $this->app->bind(
+            LoggerInterface::class,
+            LaravelLogger::class
+        );
 
         $this->app->bind(MeliAuthClient::class, function ($app) {
             return new MeliAuthClient(

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Application\Contracts\LoggerInterface;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Jobs\ProcessItemJob;
@@ -15,6 +16,9 @@ it('successfully handles item processing', function () {
         'title' => 'Test Item',
         'price' => 99.99,
     ];
+
+    $mockLogger = Mockery::mock(LoggerInterface::class);
+    $mockLogger->shouldReceive('info')->twice();
 
     $mockItemsClient = Mockery::mock(MeliItemsClient::class);
     $mockItemsClient->shouldReceive('getItem')
@@ -31,11 +35,15 @@ it('successfully handles item processing', function () {
 
     $job = new ProcessItemJob('ITEM_123', 'access-token-123');
 
-    $job->handle($mockItemsClient, $mockRepository);
+    $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 });
 
 it('marks item as failed when client throws exception', function () {
     $exception = new Exception('API Error');
+
+    $mockLogger = Mockery::mock(LoggerInterface::class);
+    $mockLogger->shouldReceive('info')->once();
+    $mockLogger->shouldReceive('error')->once();
 
     $mockItemsClient = Mockery::mock(MeliItemsClient::class);
     $mockItemsClient->shouldReceive('getItem')
@@ -48,7 +56,7 @@ it('marks item as failed when client throws exception', function () {
 
     $job = new ProcessItemJob('ITEM_456', 'access-token-456');
 
-    expect(static fn () => $job->handle($mockItemsClient, $mockRepository))
+    expect(static fn () => $job->handle($mockItemsClient, $mockRepository, $mockLogger))
         ->toThrow(Exception::class);
 });
 
@@ -58,6 +66,10 @@ it('marks item as failed before re-throwing exception', function () {
     $mockItemsClient = Mockery::mock(MeliItemsClient::class);
     $mockItemsClient->shouldReceive('getItem')
         ->andThrow($exception);
+
+    $mockLogger = Mockery::mock(LoggerInterface::class);
+    $mockLogger->shouldReceive('info')->once();
+    $mockLogger->shouldReceive('error')->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
     $callOrder = [];
@@ -69,7 +81,7 @@ it('marks item as failed before re-throwing exception', function () {
 
     $job = new ProcessItemJob('ITEM_789', 'token');
 
-    $job->handle($mockItemsClient, $mockRepository);
+    $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 
     expect($callOrder)->toBe(['markAsFailed']);
 })->throws(RuntimeException::class);
@@ -77,6 +89,9 @@ it('marks item as failed before re-throwing exception', function () {
 it('passes correct item id and access token to client', function () {
     $itemId = 'ITEM_SPECIFIC_123';
     $accessToken = 'specific-token-456';
+
+    $mockLogger = Mockery::mock(LoggerInterface::class);
+    $mockLogger->shouldReceive('info')->twice();
 
     $mockItemsClient = Mockery::mock(MeliItemsClient::class);
     $mockItemsClient->shouldReceive('getItem')
@@ -90,7 +105,7 @@ it('passes correct item id and access token to client', function () {
 
     $job = new ProcessItemJob($itemId, $accessToken);
 
-    $job->handle($mockItemsClient, $mockRepository);
+    $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 });
 
 it('has correct job configuration', function () {
@@ -117,13 +132,17 @@ it('does not call save when client fails', function () {
     $mockItemsClient->shouldReceive('getItem')
         ->andThrow(new Exception('Failed'));
 
+    $mockLogger = Mockery::mock(LoggerInterface::class);
+    $mockLogger->shouldReceive('info')->once();
+    $mockLogger->shouldReceive('error')->once();
+
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
     $mockRepository->shouldNotReceive('saveFromApi');
     $mockRepository->shouldReceive('markAsFailed')->once();
 
     $job = new ProcessItemJob('ITEM_123', 'token');
 
-    $job->handle($mockItemsClient, $mockRepository);
+    $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 })->throws(Exception::class);
 
 it('handles client returning complex item data', function () {
@@ -142,6 +161,9 @@ it('handles client returning complex item data', function () {
         ],
     ];
 
+    $mockLogger = Mockery::mock(LoggerInterface::class);
+    $mockLogger->shouldReceive('info')->twice();
+
     $mockItemsClient = Mockery::mock(MeliItemsClient::class);
     $mockItemsClient->shouldReceive('getItem')
         ->andReturn($complexItemData);
@@ -155,5 +177,5 @@ it('handles client returning complex item data', function () {
 
     $job = new ProcessItemJob('ITEM_COMPLEX', 'token');
 
-    $job->handle($mockItemsClient, $mockRepository);
+    $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 });

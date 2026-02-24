@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Application\Contracts\LoggerInterface;
 use App\Core\Application\Contracts\QueueDispatcherInterface;
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
@@ -13,6 +14,21 @@ function createResultsWithIds(int $start, int $count): array
     return collect(range($start, $start + $count - 1))
         ->map(fn ($i) => "ID_$i")
         ->toArray();
+}
+
+function createLoggerMock(): LoggerInterface
+{
+    $logger = Mockery::mock(LoggerInterface::class);
+    $logger->shouldReceive('info')
+        ->zeroOrMoreTimes();
+    $logger->shouldReceive('debug')
+        ->zeroOrMoreTimes();
+    $logger->shouldReceive('warning')
+        ->zeroOrMoreTimes();
+    $logger->shouldReceive('error')
+        ->zeroOrMoreTimes();
+
+    return $logger;
 }
 
 function createRepositoryMock(?int $expectedCreatePendingCalls = null): ItemRepositoryInterface
@@ -57,8 +73,9 @@ it('dispatches messages respecting limit', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(10);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 10);
 });
@@ -82,8 +99,9 @@ it('increments offset correctly for pagination', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(15);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 15);
 });
@@ -112,8 +130,9 @@ it('ignores items without id and does not dispatch them', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(3);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 10);
 });
@@ -134,8 +153,9 @@ it('stops pagination when results are empty', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(3);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 100);
 });
@@ -154,8 +174,9 @@ it('stops exactly at the specified limit', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(7);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 7);
 });
@@ -185,8 +206,9 @@ it('dispatches ProcessItemMessage with correct item id and token', function () {
         ->twice();
 
     $repository = createRepositoryMock(2);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute($sellerId, $token, 2);
 });
@@ -208,8 +230,9 @@ it('handles multiple pagination pages correctly', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(20);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 20);
 });
@@ -228,8 +251,9 @@ it('stops iteration when limit is smaller than available results', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(7);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 7);
 });
@@ -254,8 +278,9 @@ it('uses default max ads of 30 when not specified', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(30);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token');
 });
@@ -288,8 +313,9 @@ it('correctly handles mixed valid and invalid items across pages', function () {
         ->with(Mockery::type(ProcessItemJob::class));
 
     $repository = createRepositoryMock(7);
+    $logger = createLoggerMock();
 
-    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository);
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 10);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Core\Application\Contracts\LoggerInterface;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,9 +28,15 @@ class ProcessItemJob implements ShouldQueue
 
     public function handle(
         MeliItemsClient $itemsClient,
-        ItemRepositoryInterface $repository
+        ItemRepositoryInterface $repository,
+        LoggerInterface $logger
     ): void {
         try {
+            $logger->info('Processing item job started', [
+                'item_id' => $this->itemId,
+                'attempt' => $this->attempts(),
+            ]);
+
             $itemData = $itemsClient->getItem(
                 itemId: $this->itemId,
                 accessToken: $this->accessToken
@@ -37,11 +44,22 @@ class ProcessItemJob implements ShouldQueue
 
             $repository->saveFromApi($itemData);
             $repository->markAsProcessed($this->itemId);
+
+            $logger->info('Item successfully processed and saved', [
+                'item_id' => $this->itemId,
+                'title' => $itemData['title'] ?? 'N/A',
+            ]);
         } catch (Throwable $e) {
-            $repository->markAsFailed(
-                $this->itemId,
-                $e->getMessage()
-            );
+            $errorMessage = $e->getMessage();
+            $repository->markAsFailed($this->itemId, $errorMessage);
+
+            $logger->error('Failed to process item', [
+                'item_id' => $this->itemId,
+                'error' => $errorMessage,
+                'exception' => get_class($e),
+                'attempt' => $this->attempts(),
+                'max_tries' => $this->tries,
+            ]);
 
             throw $e;
         }
