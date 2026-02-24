@@ -13,6 +13,23 @@ services:
       - desafio-db
       - desafio-redis
 
+  desafio-queue:
+    build:
+      context: .
+      dockerfile: .docker/dev/php/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    container_name: desafio_queue
+    volumes:
+      - ./:/var/www
+    command: ["php", "artisan", "queue:work", "--tries=5"]
+    restart: always
+    depends_on:
+      - desafio-db
+      - desafio-redis
+      - desafio-app
+
   desafio-nginx:
     image: nginx:alpine
     container_name: desafio_nginx
