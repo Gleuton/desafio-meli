@@ -93,18 +93,18 @@ curl -X GET http://localhost:8080/api/items
 **Resposta (exemplo):**
 ```json
 [
-  {
-    "id": 1,
-    "meli_id": "MLB2512345678",
-    "title": "Produto Exemplo",
-    "category": "Eletrônicos",
-    "price": 199.99,
-    "seller_id": 252254392,
-    "processing_status": "completed",
-    "created_at": "2026-02-24T10:30:00Z",
-    "updated_at": "2026-02-24T10:30:00Z"
-  },
-  ...
+    {
+        "id": 133,
+        "meli_id": "MLB009000011",
+        "seller_id": "252254392",
+        "title": "Cooler para Notebook Suporte Ergonômico",
+        "status": "active",
+        "processing_status": "pending",
+        "created_at": "2026-01-22T12:15:00Z",
+        "updated_at": "2026-01-28T09:30:00Z",
+        "processed_at": "2026-02-24T17:57:43Z"
+    },
+    ...
 ]
 ```
 
