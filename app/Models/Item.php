@@ -14,22 +14,15 @@ class Item extends Model
     protected $fillable = [
         'meli_id',
         'title',
-        'category_id',
-        'price',
-        'currency_id',
-        'condition',
-        'listing_type_id',
-        'permalink',
-        'thumbnail',
-        'seller_id',
         'status',
-        'raw_payload',
+        'created',
+        'updated',
         'processed_at',
-        'failed_reason',
     ];
 
     protected $casts = [
-        'raw_payload' => 'array',
+        'created' => 'datetime',
+        'updated' => 'datetime',
         'processed_at' => 'datetime',
     ];
 }

@@ -16,20 +16,12 @@ return new class extends Migration
 
             $table->string('meli_id')->unique();
             $table->string('title')->nullable();
-            $table->string('category_id')->nullable();
-            $table->decimal('price', 12, 2)->nullable();
-            $table->string('currency_id')->nullable();
-            $table->string('condition')->nullable();
-            $table->string('listing_type_id')->nullable();
-            $table->string('permalink')->nullable();
-            $table->string('thumbnail')->nullable();
-            $table->string('seller_id')->nullable();
-
-            $table->string('status')->default('pending');
-            $table->json('raw_payload')->nullable();
+            $table->string('status')->nullable();
+            $table->text('failed_reason')->nullable();
 
             $table->timestamp('processed_at')->nullable();
-            $table->text('failed_reason')->nullable();
+            $table->timestamp('created')->nullable();
+            $table->timestamp('updated')->nullable();
 
             $table->timestamps();
         });
