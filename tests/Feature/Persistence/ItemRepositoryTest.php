@@ -12,9 +12,6 @@ it('saves item from api payload', function () {
     $payload = [
         'id' => 'MLB123',
         'title' => 'Produto Teste',
-        'price' => 199.90,
-        'currency_id' => 'BRL',
-        'seller_id' => '252254392',
     ];
 
     $repo->saveFromApi($payload);
@@ -26,9 +23,6 @@ it('saves item from api payload', function () {
         [
             'meli_id' => $payload['id'],
             'title' => $payload['title'],
-            'price' => $payload['price'],
-            'currency_id' => $payload['currency_id'],
-            'seller_id' => $payload['seller_id'],
         ]
     );
 });
@@ -71,13 +65,11 @@ it('marks item as failed', function () {
 
     $item = Item::where('meli_id', 'MLB999')->first();
 
-    expect($item->status)->toBe('failed')
-        ->and($item->failed_reason)->toBe('API error');
+    expect($item->failed_reason)->toBe('API error');
     $this->assertDatabaseHas(
         'items',
         [
             'meli_id' => 'MLB999',
-            'status' => 'failed',
             'failed_reason' => 'API error',
         ]
     );

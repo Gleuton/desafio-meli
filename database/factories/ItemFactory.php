@@ -24,21 +24,11 @@ class ItemFactory extends Factory
         return [
             'meli_id' => 'MLB'.fake()->unique()->numerify('##########'),
             'title' => fake()->sentence(4),
-            'category_id' => 'MLB'.fake()->numerify('####'),
-            'price' => fake()->randomFloat(2, 10, 10000),
-            'currency_id' => 'BRL',
-            'condition' => fake()->randomElement(['new', 'used']),
-            'listing_type_id' => fake()->randomElement(['gold_special', 'gold_pro', 'free']),
-            'permalink' => fake()->url(),
-            'thumbnail' => fake()->imageUrl(640, 480, 'products'),
-            'seller_id' => fake()->numerify('########'),
             'status' => 'processed',
-            'raw_payload' => [
-                'id' => 'MLB'.fake()->numerify('##########'),
-                'title' => fake()->sentence(4),
-            ],
-            'processed_at' => now(),
             'failed_reason' => null,
+            'processed_at' => now(),
+            'created' => fake()->dateTimeBetween('-2 weeks', '-1 week'),
+            'updated' => fake()->dateTimeBetween('-6 days', 'now'),
         ];
     }
 
@@ -50,7 +40,7 @@ class ItemFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => 'pending',
             'processed_at' => null,
-            'raw_payload' => null,
+            'failed_reason' => null,
         ]);
     }
 
@@ -62,6 +52,7 @@ class ItemFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'status' => 'failed',
             'failed_reason' => $reason ?? 'Test failure reason',
+            'processed_at' => null,
         ]);
     }
 }
