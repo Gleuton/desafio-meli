@@ -1,7 +1,11 @@
 <?php
 
-namespace App\Core\Infrastructure\Persistence;
+namespace App\Core\Infrastructure\Persistence\Eloquent;
 
+use App\Core\Application\DTOs\Input\ListItemsInputDTO;
+use App\Core\Domain\Collections\ItemCollection;
+use App\Core\Domain\Entities\Item as DomainItem;
+use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Models\Item;
 use Carbon\Carbon;
 
@@ -54,5 +58,39 @@ class EloquentItemRepository implements ItemRepositoryInterface
         Item::where('meli_id', $itemId)->update([
             'failed_reason' => $reason,
         ]);
+    }
+
+    public function findById(string $itemId): ?DomainItem
+    {
+        $model = Item::where('meli_id', $itemId)
+            ->first();
+
+        return $model ? ItemMapper::toDomain($model) : null;
+    }
+
+    public function findPaginatedBySeller(
+        ListItemsInputDTO $inputDTO
+    ): ItemCollection {
+        $query = Item::query();
+
+        if ($inputDTO->sellerId !== null) {
+            $query->where('seller_id', $inputDTO->sellerId);
+        }
+
+        $total = $query->count();
+
+        $models = $query
+            ->orderByDesc('created')
+            ->paginate($inputDTO->perPage, ['*'], 'page', $inputDTO->page)
+            ->getCollection();
+
+        $items = $models->map(fn ($model) => ItemMapper::toDomain($model))->all();
+
+        return new ItemCollection(
+            items: $items,
+            totalItems: $total,
+            currentPage: $inputDTO->page,
+            perPage: $inputDTO->perPage,
+        );
     }
 }

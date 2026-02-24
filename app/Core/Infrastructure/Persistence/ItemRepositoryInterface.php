@@ -2,6 +2,10 @@
 
 namespace App\Core\Infrastructure\Persistence;
 
+use App\Core\Application\DTOs\Input\ListItemsInputDTO;
+use App\Core\Domain\Collections\ItemCollection;
+use App\Core\Domain\Entities\Item;
+
 interface ItemRepositoryInterface
 {
     /**
@@ -18,4 +22,8 @@ interface ItemRepositoryInterface
     public function markAsProcessed(string $itemId): void;
 
     public function markAsFailed(string $itemId, string $reason): void;
+
+    public function findById(string $itemId): ?Item;
+
+    public function findPaginatedBySeller(ListItemsInputDTO $inputDTO): ItemCollection;
 }

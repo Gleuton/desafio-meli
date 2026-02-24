@@ -1,6 +1,6 @@
 <?php
 
-use App\Core\Infrastructure\Persistence\EloquentItemRepository;
+use App\Core\Infrastructure\Persistence\Eloquent\EloquentItemRepository;
 use App\Models\Item;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

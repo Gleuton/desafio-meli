@@ -10,7 +10,7 @@ use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Http\Contracts\HttpClientInterface;
 use App\Core\Infrastructure\Http\GuzzleHttpClient;
 use App\Core\Infrastructure\Logging\LaravelLogger;
-use App\Core\Infrastructure\Persistence\EloquentItemRepository;
+use App\Core\Infrastructure\Persistence\Eloquent\EloquentItemRepository;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Core\Infrastructure\Queue\LaravelQueueDispatcher;
 use Illuminate\Support\ServiceProvider;
