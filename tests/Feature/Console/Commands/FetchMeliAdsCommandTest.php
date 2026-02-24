@@ -99,27 +99,8 @@ it('uses custom limit from option', function () {
         ->assertExitCode(0);
 });
 
-it('skips execution when database has 30 or more ads without force flag', function () {
+it('executes even when database has 30 or more ads', function () {
     Item::factory()->count(30)->create();
-
-    $mockAuthClient = Mockery::mock(MeliAuthClient::class);
-    $mockAuthClient->shouldNotReceive('getToken');
-
-    $mockUseCase = Mockery::mock(FetchSellerAdsUseCase::class);
-    $mockUseCase->shouldNotReceive('execute');
-
-    $this->app->instance(MeliAuthClient::class, $mockAuthClient);
-    $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
-
-    expect(Item::count())->toBe(30);
-
-    $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
-        ->assertExitCode(0)
-        ->expectsOutputToContain('already has 30 ads');
-});
-
-it('executes when database has 30+ ads with force flag', function () {
-    Item::factory()->count(50)->create();
 
     $mockAuthClient = Mockery::mock(MeliAuthClient::class);
     $mockAuthClient->shouldReceive('getToken')
@@ -137,14 +118,11 @@ it('executes when database has 30+ ads with force flag', function () {
     $this->app->instance(MeliAuthClient::class, $mockAuthClient);
     $this->app->instance(FetchSellerAdsUseCase::class, $mockUseCase);
 
-    expect(Item::count())->toBe(50);
+    expect(Item::count())->toBe(30);
 
-    $this->artisan('meli:fetch-ads', [
-        '--seller-id' => 'seller-id',
-        '--force' => true,
-    ])
+    $this->artisan('meli:fetch-ads', ['--seller-id' => 'seller-id'])
         ->assertExitCode(0)
-        ->expectsOutputToContain('Force mode enabled');
+        ->expectsOutputToContain('Proceeding to update existing ads');
 });
 
 it('displays current ad count', function () {
