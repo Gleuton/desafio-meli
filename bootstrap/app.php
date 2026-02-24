@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('meli:fetch-ads --no-retry')
+        $schedule->command('meli:fetch-ads', ['--no-retry'])
             ->everyTenMinutes()
             ->withoutOverlapping()
             ->onOneServer();

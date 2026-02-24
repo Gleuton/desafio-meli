@@ -41,20 +41,61 @@ Este comando iniciará os seguintes serviços:
 - `desafio_nginx`: Servidor Web (porta 8080)
 - `desafio_db`: Banco de Dados MySQL
 - `desafio_redis`: Gerenciador de Filas
-- `desafio_queue`: Worker para processar as filas automaticamente
 - `desafio_mockoon`: Mock das APIs (porta 3001)
 
-### 3. Instalar dependências e rodar Migrations
+### 3. Setup Inicial (Método Rápido)
 ```bash
-docker exec -it desafio_app composer install
-docker exec -it desafio_app php artisan migrate
+docker exec -it desafio_app composer run setup
+```
+Este comando executa automaticamente:
+- Instalação das dependências do Composer
+- Cópia do arquivo `.env.example` para `.env` (se não existir)
+- Geração da chave da aplicação
+- Execução das migrations
+
+**⚠️ Importante:** O arquivo `workers.sh` precisa ter permissões de execução:
+```bash
+chmod +x .docker/dev/php/workers.sh
+```
+
+Após o setup, inicie os workers:
+```bash
+docker exec -it desafio_app composer run workers
+```
+
+### 4. Comandos do Composer Disponíveis
+
+Para facilitar o desenvolvimento, foram criados scripts no `composer.json`:
+
+#### `composer run setup`
+Instala e configura todo o projeto do zero. Ideal para primeiro uso.
+
+#### `composer run workers`
+Inicia o **Scheduler** e **Queue Worker** em paralelo:
+- `php artisan schedule:work` - Executa tarefas agendadas
+- `php artisan queue:work` - Processa jobs da fila
+
+```bash
+docker exec -it desafio_app composer run workers
+```
+
+#### `composer run dev`
+Inicia o servidor de desenvolvimento do Laravel:
+```bash
+docker exec -it desafio_app composer run dev
+```
+
+#### `composer run test`
+Executa a suite de testes:
+```bash
+docker exec -it desafio_app composer run test
 ```
 
 ---
 
 ## 📦 Execução do Job de Anúncios
 
-O sistema possui duas formas de processar os anúncios:
+O sistema possui três formas de processar os anúncios:
 
 ### A. Execução Manual (Command)
 Você pode disparar a busca de anúncios manualmente a qualquer momento via Artisan:
@@ -65,13 +106,24 @@ docker exec -it desafio_app php artisan meli:fetch-ads
 - `--seller-id`: Define um ID de vendedor específico (Padrão: 252254392).
 - `--limit`: Define a quantidade de anúncios a buscar (Padrão: 30).
 
-### B. Execução Agendada (Scheduler)
-O Laravel está configurado para executar o comando `meli:fetch-ads` **automaticamente a cada 10 minutos**. A configuração está definida em `bootstrap/app.php` e inclui:
+### B. Execução Agendada (Scheduler Automático)
+O Laravel está configurado para executar o comando `meli:fetch-ads` **automaticamente a cada 10 minutos**. 
+
+**Para ativar o scheduler:**
+```bash
+docker exec -it desafio_app composer run workers
+```
+
+Este comando inicia:
+- `php artisan schedule:work` - Executa tarefas agendadas automaticamente
+- `php artisan queue:work` - Processa os jobs da fila
+
+A configuração do scheduler está em `bootstrap/app.php` e inclui:
 - Execução a cada 10 minutos
 - Proteção contra execução simultânea (`withoutOverlapping()`)
 - Execução apenas em um servidor (`onOneServer()`)
 
-**Para Visualizar os Jobs agendados:**
+**Para visualizar os jobs agendados:**
 ```bash
 docker exec -it desafio_app php artisan schedule:list
 ```
@@ -218,6 +270,119 @@ FetchSellerAdsUseCase (Application)
 | **Dependency Inversion** | Dependências em abstrações (interfaces), não em classes concretas |
 | **Interface Segregation** | Interfaces específicas e pequenas para cada contrato |
 | **Separation of Concerns** | Lógica de negócio isolada da infraestrutura |
+
+---
+
+## 📚 Referência Rápida de Comandos
+
+### Setup e Inicialização
+```bash
+# Subir containers Docker
+docker compose -f docker-compose.dev.yml up -d
+
+# Dar permissão de execução ao workers.sh (necessário apenas uma vez)
+chmod +x .docker/dev/php/workers.sh
+
+# Setup inicial (instalar dependências, migrations, etc)
+docker exec -it desafio_app composer run setup
+
+# Iniciar workers (scheduler + queue)
+docker exec -it desafio_app composer run workers
+```
+
+### Comandos do Composer
+```bash
+# Setup completo do projeto
+composer run setup
+
+# Iniciar workers (scheduler + queue)
+composer run workers
+
+# Iniciar servidor de desenvolvimento
+composer run dev
+
+# Executar testes
+composer run test
+```
+
+### Comandos Artisan
+```bash
+# Buscar anúncios manualmente
+docker exec -it desafio_app php artisan meli:fetch-ads
+
+# Listar jobs agendados
+docker exec -it desafio_app php artisan schedule:list
+
+# Ver logs em tempo real
+docker exec -it desafio_app php artisan pail
+```
+
+### Monitoramento
+```bash
+# Ver logs da aplicação
+docker logs -f desafio_app
+
+# Ver logs do workers
+docker logs -f desafio_workers
+
+# Ver logs do Laravel
+tail -f storage/logs/laravel.log
+```
+
+### API
+```bash
+# Listar todos os itens
+curl http://localhost:8080/api/v1/items
+
+# Filtrar por vendedor
+curl http://localhost:8080/api/v1/items?seller_id=252254392
+
+# Filtrar por status
+curl http://localhost:8080/api/v1/items?status=completed
+
+# Paginação
+curl http://localhost:8080/api/v1/items?page=2&limit=50
+```
+
+---
+
+## ❓ Troubleshooting
+
+### Erro: "Permission denied" ao executar `composer run workers`
+
+Se você encontrar um erro como:
+```
+sh: .docker/dev/php/workers.sh: Permission denied
+```
+
+**Solução:** O arquivo `workers.sh` precisa ter permissões de execução:
+```bash
+chmod +x .docker/dev/php/workers.sh
+```
+
+Depois execute novamente:
+```bash
+docker exec -it desafio_app composer run workers
+```
+
+### Workers não estão processando jobs
+
+Verifique se:
+1. O Redis está rodando: `docker ps | grep desafio_redis`
+2. Os workers estão ativos: `docker logs -f desafio_app`
+3. Existem jobs na fila: `docker exec -it desafio_app php artisan queue:monitor`
+
+### Scheduler não está executando comandos
+
+Certifique-se de que o `schedule:work` está rodando:
+```bash
+docker exec -it desafio_app composer run workers
+```
+
+Para verificar os jobs agendados:
+```bash
+docker exec -it desafio_app php artisan schedule:list
+```
 
 ---
 
