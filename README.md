@@ -7,7 +7,6 @@ Este projeto é uma solução para o desafio de integração com a API do Mercad
 O projeto foi construído utilizando:
 - **PHP 8.5** & **Laravel 12**
 - **MySQL 8.4** para persistência de dados
-- **Redis** para gerenciamento de filas
 - **Docker & Docker Compose** para ambiente de desenvolvimento isolado
 - **Mockoon CLI** para simulação das APIs do Mercado Livre e Auth
 
