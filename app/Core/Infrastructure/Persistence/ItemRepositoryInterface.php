@@ -3,8 +3,8 @@
 namespace App\Core\Infrastructure\Persistence;
 
 use App\Core\Application\DTOs\Input\ListItemsInputDTO;
-use App\Core\Domain\Collections\ItemCollection;
 use App\Core\Domain\Entities\Item;
+use App\Core\Domain\Entities\PaginatedItem;
 
 interface ItemRepositoryInterface
 {
@@ -25,5 +25,5 @@ interface ItemRepositoryInterface
 
     public function findById(string $itemId): ?Item;
 
-    public function findPaginatedBySeller(ListItemsInputDTO $inputDTO): ItemCollection;
+    public function findPaginatedBySeller(ListItemsInputDTO $inputDTO): PaginatedItem;
 }

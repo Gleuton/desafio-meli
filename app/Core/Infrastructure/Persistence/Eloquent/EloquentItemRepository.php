@@ -3,8 +3,8 @@
 namespace App\Core\Infrastructure\Persistence\Eloquent;
 
 use App\Core\Application\DTOs\Input\ListItemsInputDTO;
-use App\Core\Domain\Collections\ItemCollection;
 use App\Core\Domain\Entities\Item as DomainItem;
+use App\Core\Domain\Entities\PaginatedItem;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Models\Item;
 use Carbon\Carbon;
@@ -70,7 +70,7 @@ class EloquentItemRepository implements ItemRepositoryInterface
 
     public function findPaginatedBySeller(
         ListItemsInputDTO $inputDTO
-    ): ItemCollection {
+    ): PaginatedItem {
         $query = Item::query();
 
         if ($inputDTO->sellerId !== null) {
@@ -84,9 +84,11 @@ class EloquentItemRepository implements ItemRepositoryInterface
             ->paginate($inputDTO->perPage, ['*'], 'page', $inputDTO->page)
             ->getCollection();
 
-        $items = $models->map(fn ($model) => ItemMapper::toDomain($model))->all();
+        $items = $models->map(
+            fn ($model) => ItemMapper::toDomain($model)
+        )->all();
 
-        return new ItemCollection(
+        return new PaginatedItem(
             items: $items,
             totalItems: $total,
             currentPage: $inputDTO->page,

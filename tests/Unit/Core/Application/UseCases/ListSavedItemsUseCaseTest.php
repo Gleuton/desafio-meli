@@ -5,19 +5,10 @@ declare(strict_types=1);
 use App\Core\Application\DTOs\Input\ListItemsInputDTO;
 use App\Core\Application\Exceptions\InvalidPaginationException;
 use App\Core\Application\UseCases\ListSavedItemsUseCase;
-use App\Core\Domain\Collections\ItemCollection;
 use App\Core\Domain\Entities\Item;
+use App\Core\Domain\Entities\PaginatedItem;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Http\Requests\ListItemsRequest;
-
-function createMockRepository(ItemCollection $collection): ItemRepositoryInterface
-{
-    $repository = Mockery::mock(ItemRepositoryInterface::class);
-    $repository->shouldReceive('findPaginatedBySeller')
-        ->andReturn($collection);
-
-    return $repository;
-}
 
 function createItem(int $id, string $idItem, string $sellerId): Item
 {
@@ -35,20 +26,23 @@ function createItem(int $id, string $idItem, string $sellerId): Item
 
 it('executes and returns paginated items', function () {
     $item = createItem(1, 'MLB123', '252254392');
-    $collection = new ItemCollection(
+    $collection = new PaginatedItem(
         items: [$item],
         totalItems: 1,
         currentPage: 1,
         perPage: 15
     );
 
+    $repository = Mockery::mock(ItemRepositoryInterface::class);
+    $repository->shouldReceive('findPaginatedBySeller')
+        ->andReturn($collection);
+
+    $useCase = new ListSavedItemsUseCase($repository);
+
     $requestMock = Mockery::mock(ListItemsRequest::class);
     $requestMock->shouldReceive('input')->with('page')->andReturn(1);
     $requestMock->shouldReceive('input')->with('seller_id')->andReturn(12345);
     $requestMock->shouldReceive('input')->with('per_page')->andReturn(15);
-
-    $repository = createMockRepository($collection);
-    $useCase = new ListSavedItemsUseCase($repository);
 
     $input = ListItemsInputDTO::fromRequest($requestMock);
 
@@ -107,14 +101,17 @@ it('throws InvalidPaginationException when perPage is less than 1', function () 
 });
 
 it('returns empty list when no items exist', function () {
-    $collection = new ItemCollection(
+    $collection = new PaginatedItem(
         items: [],
         totalItems: 0,
         currentPage: 1,
         perPage: 15
     );
 
-    $repository = createMockRepository($collection);
+    $repository = Mockery::mock(ItemRepositoryInterface::class);
+    $repository->shouldReceive('findPaginatedBySeller')
+        ->andReturn($collection);
+
     $useCase = new ListSavedItemsUseCase($repository);
 
     $requestMock = Mockery::mock(ListItemsRequest::class);
@@ -133,14 +130,17 @@ it('returns empty list when no items exist', function () {
 
 it('maps domain entity to response DTO correctly', function () {
     $item = createItem(1, 'MLB456', '999999999');
-    $collection = new ItemCollection(
+    $collection = new PaginatedItem(
         items: [$item],
         totalItems: 1,
         currentPage: 1,
         perPage: 15
     );
 
-    $repository = createMockRepository($collection);
+    $repository = Mockery::mock(ItemRepositoryInterface::class);
+    $repository->shouldReceive('findPaginatedBySeller')
+        ->andReturn($collection);
+
     $useCase = new ListSavedItemsUseCase($repository);
 
     $requestMock = Mockery::mock(ListItemsRequest::class);

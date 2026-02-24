@@ -24,7 +24,7 @@ final class ListSavedItemsUseCase
     {
         $this->validatePagination($input);
 
-        $collection = $this->repository->findPaginatedBySeller($input);
+        $paginatedBySeller = $this->repository->findPaginatedBySeller($input);
 
         $itemDTOs = array_map(
             static fn ($item) => new ItemResponseDTO(
@@ -37,15 +37,15 @@ final class ListSavedItemsUseCase
                 $item->updated->format('Y-m-d\TH:i:s\Z'),
                 $item->processedAt?->format('Y-m-d\TH:i:s\Z'),
             ),
-            $collection->getItems()
+            $paginatedBySeller->items
         );
 
         return new ItemListResponseDTO(
             $itemDTOs,
-            $collection->getTotalItems(),
-            $collection->getCurrentPage(),
-            $collection->getPerPage(),
-            $collection->getTotalPages(),
+            $paginatedBySeller->totalItems,
+            $paginatedBySeller->currentPage,
+            $paginatedBySeller->perPage,
+            $paginatedBySeller->totalPages,
         );
     }
 

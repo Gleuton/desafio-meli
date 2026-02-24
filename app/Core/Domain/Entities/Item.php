@@ -4,7 +4,7 @@ namespace App\Core\Domain\Entities;
 
 use DateTimeImmutable;
 
-final class Item
+class Item
 {
     public private(set) int $id;
 
