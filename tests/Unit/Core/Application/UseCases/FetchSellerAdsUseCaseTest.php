@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 use App\Core\Application\Contracts\LoggerInterface;
 use App\Core\Application\Contracts\QueueDispatcherInterface;
+use App\Core\Application\Exceptions\FailedToFetchAdsException;
 use App\Core\Application\UseCases\FetchSellerAdsUseCase;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Jobs\ProcessItemJob;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
+use Psr\Http\Message\RequestInterface;
 
 function createResultsWithIds(int $start, int $count): array
 {
@@ -318,4 +322,38 @@ it('correctly handles mixed valid and invalid items across pages', function () {
     $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
 
     $useCase->execute('252254392', 'fake-token', 10);
+});
+
+it('throws FailedToFetchAdsException when network timeout occurs', function () {
+    $request = Mockery::mock(RequestInterface::class);
+    $searchClient = Mockery::mock(MeliSearchClient::class);
+    $searchClient->shouldReceive('searchBySeller')
+        ->once()
+        ->andThrow(new ConnectException('Connection timeout', $request));
+
+    $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
+    $repository = createRepositoryMock(0);
+    $logger = createLoggerMock();
+
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
+
+    expect(fn () => $useCase->execute('252254392', 'fake-token', 10))
+        ->toThrow(FailedToFetchAdsException::class);
+});
+
+it('throws FailedToFetchAdsException when API request fails', function () {
+    $request = Mockery::mock(RequestInterface::class);
+    $searchClient = Mockery::mock(MeliSearchClient::class);
+    $searchClient->shouldReceive('searchBySeller')
+        ->once()
+        ->andThrow(new RequestException('Invalid token', $request));
+
+    $dispatcher = Mockery::mock(QueueDispatcherInterface::class);
+    $repository = createRepositoryMock(0);
+    $logger = createLoggerMock();
+
+    $useCase = new FetchSellerAdsUseCase($searchClient, $dispatcher, $repository, $logger);
+
+    expect(static fn () => $useCase->execute('252254392', 'fake-token', 10))
+        ->toThrow(FailedToFetchAdsException::class);
 });

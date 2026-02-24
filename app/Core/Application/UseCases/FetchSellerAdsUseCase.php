@@ -4,11 +4,12 @@ namespace App\Core\Application\UseCases;
 
 use App\Core\Application\Contracts\LoggerInterface;
 use App\Core\Application\Contracts\QueueDispatcherInterface;
+use App\Core\Application\Exceptions\FailedToFetchAdsException;
 use App\Core\Infrastructure\Http\Clients\MeliSearchClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Jobs\ProcessItemJob;
-use Exception;
-use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
 
 class FetchSellerAdsUseCase
 {
@@ -21,6 +22,9 @@ class FetchSellerAdsUseCase
         private readonly LoggerInterface $logger,
     ) {}
 
+    /**
+     * @throws FailedToFetchAdsException When API communication fails
+     */
     public function execute(string $sellerId, string $token, int $maxAds = 30): void
     {
         try {
@@ -34,17 +38,42 @@ class FetchSellerAdsUseCase
             $this->logger->info('Successfully completed fetching ads', [
                 'seller_id' => $sellerId,
             ]);
-        } catch (Exception $e) {
+        } catch (FailedToFetchAdsException $e) {
+            $this->logger->error('API error while fetching ads', [
+                'seller_id' => $sellerId,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+            throw $e;
+        } catch (ConnectException $e) {
+            $exception = FailedToFetchAdsException::networkTimeout($sellerId);
+            $this->logger->error('Network timeout while fetching ads', [
+                'seller_id' => $sellerId,
+                'error' => $e->getMessage(),
+            ]);
+            throw $exception;
+        } catch (RequestException $e) {
+            $exception = FailedToFetchAdsException::fromApiError($sellerId, $e->getMessage());
+            $this->logger->error('Request error while fetching ads', [
+                'seller_id' => $sellerId,
+                'error' => $e->getMessage(),
+                'http_code' => $e->getCode(),
+            ]);
+            throw $exception;
+        } catch (\Throwable $e) {
+            $exception = FailedToFetchAdsException::fromApiError($sellerId, $e->getMessage());
             $this->logger->error('Unexpected error while fetching ads', [
                 'seller_id' => $sellerId,
                 'error' => $e->getMessage(),
                 'exception' => get_class($e),
             ]);
-
-            throw $e;
+            throw $exception;
         }
     }
 
+    /**
+     * @throws FailedToFetchAdsException
+     */
     private function fetchAndDispatchAds(string $sellerId, string $token, int $maxAds): void
     {
         $offset = 0;
@@ -93,24 +122,32 @@ class FetchSellerAdsUseCase
     }
 
     /**
-     * @return array<int, string> Array of item IDs
+     * @return array<int, string>
      *
-     * @throws GuzzleException
+     * @throws FailedToFetchAdsException
      */
     private function searchSeller(string $sellerId, string $token, int $offset): array
     {
-        $response = $this->searchClient->searchBySeller(
-            sellerId: $sellerId,
-            accessToken: $token,
-            limit: self::PAGINATION_LIMIT,
-            offset: $offset
-        );
+        try {
+            $response = $this->searchClient->searchBySeller(
+                sellerId: $sellerId,
+                accessToken: $token,
+                limit: self::PAGINATION_LIMIT,
+                offset: $offset
+            );
 
-        return $response['results'] ?? [];
+            return $response['results'] ?? [];
+        } catch (ConnectException $e) {
+            throw FailedToFetchAdsException::networkTimeout($sellerId);
+        } catch (RequestException $e) {
+            throw FailedToFetchAdsException::fromApiError($sellerId, $e->getMessage());
+        } catch (\Throwable $e) {
+            throw FailedToFetchAdsException::fromApiError($sellerId, $e->getMessage());
+        }
     }
 
     /**
-     * @param  array<int, string>  $results  Array of item IDs
+     * @param  array<int, string>  $results
      */
     private function processResults(array $results, string $sellerId, string $token, int $dispatchedCount, int $maxAds): int
     {

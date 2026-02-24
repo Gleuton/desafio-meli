@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Application\Contracts\LoggerInterface;
+use App\Core\Application\Exceptions\FailedToProcessItemException;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Jobs\ProcessItemJob;
@@ -84,7 +85,7 @@ it('marks item as failed before re-throwing exception', function () {
     $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 
     expect($callOrder)->toBe(['markAsFailed']);
-})->throws(RuntimeException::class);
+})->throws(FailedToProcessItemException::class);
 
 it('passes correct item id and access token to client', function () {
     $itemId = 'ITEM_SPECIFIC_123';
@@ -96,7 +97,10 @@ it('passes correct item id and access token to client', function () {
     $mockItemsClient = Mockery::mock(MeliItemsClient::class);
     $mockItemsClient->shouldReceive('getItem')
         ->with($itemId, $accessToken)
-        ->andReturn(['id' => $itemId])
+        ->andReturn([
+            'id' => $itemId,
+            'title' => 'Test Item',
+        ])
         ->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Core\Application\Contracts\LoggerInterface;
+use App\Core\Application\Exceptions\FailedToProcessItemException;
 use App\Core\Infrastructure\Http\Clients\MeliItemsClient;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,6 +27,9 @@ class ProcessItemJob implements ShouldQueue
         public readonly string $accessToken,
     ) {}
 
+    /**
+     * @throws FailedToProcessItemException
+     */
     public function handle(
         MeliItemsClient $itemsClient,
         ItemRepositoryInterface $repository,
@@ -42,6 +46,8 @@ class ProcessItemJob implements ShouldQueue
                 accessToken: $this->accessToken
             );
 
+            $this->validateItemData($itemData);
+
             $repository->saveFromApi($itemData);
             $repository->markAsProcessed($this->itemId);
 
@@ -49,8 +55,24 @@ class ProcessItemJob implements ShouldQueue
                 'item_id' => $this->itemId,
                 'title' => $itemData['title'] ?? 'N/A',
             ]);
+        } catch (FailedToProcessItemException $e) {
+            $repository->markAsFailed($this->itemId, $e->getMessage());
+            $logger->error('Failed to process item', [
+                'item_id' => $this->itemId,
+                'error' => $e->getMessage(),
+                'attempt' => $this->attempts(),
+                'max_tries' => $this->tries,
+            ]);
+            throw $e;
         } catch (Throwable $e) {
             $errorMessage = $e->getMessage();
+            $exception = FailedToProcessItemException::fromApiError(
+                $this->itemId,
+                $errorMessage,
+                $this->attempts(),
+                $this->tries
+            );
+
             $repository->markAsFailed($this->itemId, $errorMessage);
 
             $logger->error('Failed to process item', [
@@ -61,7 +83,29 @@ class ProcessItemJob implements ShouldQueue
                 'max_tries' => $this->tries,
             ]);
 
-            throw $e;
+            throw $exception;
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $itemData
+     *
+     * @throws FailedToProcessItemException
+     */
+    private function validateItemData(array $itemData): void
+    {
+        if (empty($itemData['id'] ?? null)) {
+            throw FailedToProcessItemException::invalidItemData(
+                $this->itemId,
+                'Missing required field: id'
+            );
+        }
+
+        if (empty($itemData['title'] ?? null)) {
+            throw FailedToProcessItemException::invalidItemData(
+                $this->itemId,
+                'Missing required field: title'
+            );
         }
     }
 }
