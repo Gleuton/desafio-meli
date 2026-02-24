@@ -17,14 +17,6 @@ class FailedToFetchAdsException extends ApplicationException
         );
     }
 
-    public static function invalidSellerOrToken(string $sellerId): self
-    {
-        return new self(
-            message: "Invalid seller ID or access token for seller '{$sellerId}'",
-            code: 401
-        );
-    }
-
     public static function networkTimeout(string $sellerId): self
     {
         return new self(

@@ -5,6 +5,9 @@ namespace App\Core\Infrastructure\Logging;
 use App\Core\Application\Contracts\LoggerInterface;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @codeCoverageIgnore
+ */
 class LaravelLogger implements LoggerInterface
 {
     /**

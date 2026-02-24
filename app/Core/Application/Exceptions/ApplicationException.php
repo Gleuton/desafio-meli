@@ -7,7 +7,4 @@ use Exception;
 /**
  * Base exception for all application-level errors
  */
-abstract class ApplicationException extends Exception
-{
-    // Base exception para herança
-}
+abstract class ApplicationException extends Exception {}
