@@ -87,7 +87,7 @@ GET /api/items
 
 **Exemplo de requisição:**
 ```bash
-curl -X GET http://localhost:8080/api/items
+curl -X GET http://localhost:8080/api/v1/items
 ```
 
 **Resposta (exemplo):**
