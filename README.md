@@ -18,6 +18,8 @@ A aplicação segue princípios de **Clean Architecture**, dividida em:
 
 ---
 
+
+
 ## 🛠️ Como Executar (Docker)
 
 Toda a aplicação deve ser executada via Docker para evitar conflitos de ambiente.
@@ -107,3 +109,72 @@ docker exec -it desafio_app php artisan test
 3. **Eficiência**: Busca inicial via API Search e detalhamento individual via API Items.
 4. **Assincronismo**: Uso de filas para garantir que o job principal não fique travado.
 5. **Idempotência**: Atualização de dados caso o anúncio já exista no banco.
+
+---
+
+## 🏗️ Arquitetura da Aplicação
+
+### Divisão de Camadas
+
+A aplicação está organizada em camadas bem definidas seguindo os princípios de **Clean Architecture**:
+
+#### **Core/Application**
+Responsável pela lógica de negócio pura, sem dependências de frameworks:
+- **Contracts**: Interfaces que definem contratos (ex: `LoggerInterface`, `QueueDispatcherInterface`)
+- **Exceptions**: Exceções de domínio específicas da aplicação
+- **UseCases**: Casos de uso que orquestram a lógica de negócio (ex: `FetchSellerAdsUseCase`)
+
+#### **Core/Infrastructure**
+Implementações técnicas e acesso a recursos externos:
+- **Http**: Clientes HTTP para comunicação com APIs externas (Meli Search, Items, Auth)
+- **Logging**: Implementação de logging estruturado (`LaravelLogger`)
+- **Persistence**: Repositórios que acessam o banco de dados (`ItemRepository`)
+- **Queue**: Implementação de despacho de filas (`LaravelQueueDispatcher`)
+
+#### **Jobs**
+Processamento assíncrono de tarefas:
+- `ProcessItemJob`: Job que processa itens individuais de forma assíncrona
+
+#### **Console/Commands**
+Entrada da aplicação via CLI:
+- `FetchMeliAdsCommand`: Comando Artisan para disparar busca de anúncios manualmente ou via scheduler
+
+#### **Tests**
+Testes organizados por tipo:
+- **Unit**: Testes isolados da lógica de negócio
+- **Feature**: Testes de funcionalidade da aplicação (Jobs, Commands, Repositories)
+- **Integration**: Testes que integram com APIs/serviços externos
+
+### Fluxo de Dados
+
+```
+CLI/Scheduler
+    ↓
+FetchMeliAdsCommand (Console)
+    ↓
+FetchSellerAdsUseCase (Application)
+    ↓
+    ├─ MeliSearchClient (HTTP) → API Meli Search
+    ├─ LoggerInterface (Logging) → Logs estruturados
+    └─ QueueDispatcher (Queue) → Enfileira jobs
+         ↓
+    ProcessItemJob (Job async)
+         ↓
+         ├─ MeliItemsClient (HTTP) → API Meli Items
+         ├─ Validação de dados (Exceptions)
+         ├─ ItemRepository (Persistence) → Banco de dados
+         └─ LoggerInterface (Logging) → Logs de processamento
+```
+
+### Princípios Aplicados
+
+| Princípio | Implementação |
+|-----------|---|
+| **Single Responsibility** | Cada classe tem uma responsabilidade única |
+| **Open/Closed** | Aberto para extensão via interfaces, fechado para modificação |
+| **Dependency Inversion** | Dependências em abstrações (interfaces), não em classes concretas |
+| **Interface Segregation** | Interfaces específicas e pequenas para cada contrato |
+| **Separation of Concerns** | Lógica de negócio isolada da infraestrutura |
+
+---
+
