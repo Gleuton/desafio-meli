@@ -66,10 +66,53 @@ docker exec -it desafio_app php artisan meli:fetch-ads
 - `--limit`: Define a quantidade de anúncios a buscar (Padrão: 30).
 
 ### B. Execução Agendada (Scheduler)
-O Laravel está configurado para executar este comando automaticamente **a cada 10 minutos**. No ambiente Docker, você pode simular o scheduler rodando:
+O Laravel está configurado para executar o comando `meli:fetch-ads` **automaticamente a cada 10 minutos**. A configuração está definida em `bootstrap/app.php` e inclui:
+- Execução a cada 10 minutos
+- Proteção contra execução simultânea (`withoutOverlapping()`)
+- Execução apenas em um servidor (`onOneServer()`)
+
+**Para Visualizar os Jobs agendados:**
 ```bash
-docker exec -it desafio_app php artisan schedule:run
+docker exec -it desafio_app php artisan schedule:list
 ```
+---
+
+## 🔗 Consultar Anúncios
+
+### Endpoint de Listagem
+Para consultar os anúncios já processados e armazenados no banco de dados:
+```bash
+GET /api/items
+```
+
+**Exemplo de requisição:**
+```bash
+curl -X GET http://localhost:8080/api/items
+```
+
+**Resposta (exemplo):**
+```json
+[
+  {
+    "id": 1,
+    "meli_id": "MLB2512345678",
+    "title": "Produto Exemplo",
+    "category": "Eletrônicos",
+    "price": 199.99,
+    "seller_id": 252254392,
+    "processing_status": "completed",
+    "created_at": "2026-02-24T10:30:00Z",
+    "updated_at": "2026-02-24T10:30:00Z"
+  },
+  ...
+]
+```
+
+### Filtros Disponíveis
+- `?seller_id=252254392`: Filtrar por ID do vendedor
+- `?status=completed`: Filtrar por status de processamento (pending, processing, completed, failed)
+- `?limit=50`: Limitar a quantidade de resultados (Padrão: 30)
+- `?page=1`: Paginação de resultados
 
 ---
 
