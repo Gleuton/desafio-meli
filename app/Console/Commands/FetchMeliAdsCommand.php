@@ -30,6 +30,16 @@ class FetchMeliAdsCommand extends Command
             return self::FAILURE;
         }
 
+        return $this->executeWithRetry($useCase, $repository, $authClient, $sellerId, $limit);
+    }
+
+    private function executeWithRetry(
+        FetchSellerAdsUseCase $useCase,
+        ItemRepositoryInterface $repository,
+        MeliAuthClient $authClient,
+        string $sellerId,
+        int $limit
+    ): int {
         $this->info('Checking database for existing ads...');
         $currentCount = $repository->count();
         $this->info("Current ads in database: {$currentCount}");
@@ -48,7 +58,14 @@ class FetchMeliAdsCommand extends Command
             if (($auth['inactive_token'] ?? 1) !== 0) {
                 $this->warn('Invalid or inactive token received from Meli Auth service.');
                 $this->warn('Reason: Token is inactive or not available');
-                $this->info('The command will retry on the next execution or when a valid token is available.');
+                $this->newLine();
+                $choice = $this->choice('Do you want to retry?', ['y' => 'Yes', 'n' => 'No'], 'Y');
+
+                if ($choice === 'y') {
+                    $this->newLine();
+
+                    return $this->executeWithRetry($useCase, $repository, $authClient, $sellerId, $limit);
+                }
 
                 return self::SUCCESS;
             }
