@@ -13,7 +13,7 @@ interface ItemRepositoryInterface
 
     public function count(): int;
 
-    public function createPending(string $itemId): void;
+    public function createPending(string $itemId, ?string $sellerId = null): void;
 
     public function markAsProcessed(string $itemId): void;
 

@@ -23,6 +23,7 @@ class ItemFactory extends Factory
     {
         return [
             'meli_id' => 'MLB'.fake()->unique()->numerify('##########'),
+            'seller_id' => (string) fake()->numberBetween(100000, 999999),
             'title' => fake()->sentence(4),
             'status' => 'processed',
             'failed_reason' => null,

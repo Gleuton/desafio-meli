@@ -22,14 +22,18 @@ function createRepositoryMock(?int $expectedCreatePendingCalls = null): ItemRepo
     if ($expectedCreatePendingCalls !== null) {
         $repository->shouldReceive('createPending')
             ->times($expectedCreatePendingCalls)
-            ->with(Mockery::type('string'));
+            ->withArgs(function (string $itemId, ?string $sellerId = null) {
+                return is_string($itemId);
+            });
 
         return $repository;
     }
 
     $repository->shouldReceive('createPending')
         ->zeroOrMoreTimes()
-        ->with(Mockery::type('string'));
+        ->withArgs(function (string $itemId, ?string $sellerId = null) {
+            return is_string($itemId);
+        });
 
     return $repository;
 }

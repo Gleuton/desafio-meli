@@ -35,7 +35,7 @@ class FetchSellerAdsUseCase
                 break;
             }
 
-            $dispatchedCount = $this->processResults($results, $token, $dispatchedCount, $maxAds);
+            $dispatchedCount = $this->processResults($results, $sellerId, $token, $dispatchedCount, $maxAds);
 
             if ($dispatchedCount >= $maxAds) {
                 break;
@@ -65,14 +65,14 @@ class FetchSellerAdsUseCase
     /**
      * @param  array<int, string>  $results  Array of item IDs
      */
-    private function processResults(array $results, string $token, int $dispatchedCount, int $maxAds): int
+    private function processResults(array $results, string $sellerId, string $token, int $dispatchedCount, int $maxAds): int
     {
         foreach ($results as $itemId) {
             if (! is_string($itemId) || $itemId === '') {
                 continue;
             }
 
-            $this->repository->createPending($itemId);
+            $this->repository->createPending($itemId, $sellerId);
 
             $this->queueDispatcher->dispatch(
                 new ProcessItemJob($itemId, $token),

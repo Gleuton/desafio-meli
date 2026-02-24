@@ -34,10 +34,11 @@ class EloquentItemRepository implements ItemRepositoryInterface
         return Item::count();
     }
 
-    public function createPending(string $itemId): void
+    public function createPending(string $itemId, ?string $sellerId = null): void
     {
         Item::firstOrCreate(
             ['meli_id' => $itemId],
+            ['seller_id' => $sellerId]
         );
     }
 
