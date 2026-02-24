@@ -27,6 +27,9 @@ it('successfully handles item processing', function () {
         ->andReturn($itemData);
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')
+        ->with('ITEM_123')
+        ->once();
     $mockRepository->shouldReceive('saveFromApi')
         ->with($itemData)
         ->once();
@@ -51,6 +54,9 @@ it('marks item as failed when client throws exception', function () {
         ->andThrow($exception);
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')
+        ->with('ITEM_456')
+        ->once();
     $mockRepository->shouldReceive('markAsFailed')
         ->with('ITEM_456', 'API Error')
         ->once();
@@ -74,6 +80,11 @@ it('marks item as failed before re-throwing exception', function () {
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
     $callOrder = [];
+    $mockRepository->shouldReceive('markAsProcessing')
+        ->andReturnUsing(function () use (&$callOrder) {
+            $callOrder[] = 'markAsProcessing';
+        })
+        ->once();
     $mockRepository->shouldReceive('markAsFailed')
         ->andReturnUsing(function () use (&$callOrder) {
             $callOrder[] = 'markAsFailed';
@@ -84,7 +95,7 @@ it('marks item as failed before re-throwing exception', function () {
 
     $job->handle($mockItemsClient, $mockRepository, $mockLogger);
 
-    expect($callOrder)->toBe(['markAsFailed']);
+    expect($callOrder)->toBe(['markAsProcessing', 'markAsFailed']);
 })->throws(FailedToProcessItemException::class);
 
 it('passes correct item id and access token to client', function () {
@@ -104,6 +115,7 @@ it('passes correct item id and access token to client', function () {
         ->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')->once();
     $mockRepository->shouldReceive('saveFromApi')->once();
     $mockRepository->shouldReceive('markAsProcessed')->once();
 
@@ -141,6 +153,7 @@ it('does not call save when client fails', function () {
     $mockLogger->shouldReceive('error')->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')->once();
     $mockRepository->shouldNotReceive('saveFromApi');
     $mockRepository->shouldReceive('markAsFailed')->once();
 
@@ -173,6 +186,7 @@ it('handles client returning complex item data', function () {
         ->andReturn($complexItemData);
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')->once();
     $mockRepository->shouldReceive('saveFromApi')
         ->with($complexItemData)
         ->once();
@@ -199,6 +213,7 @@ it('throws FailedToProcessItemException when item id is missing', function () {
     $mockLogger->shouldReceive('error')->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')->once();
     $mockRepository->shouldReceive('markAsFailed')
         ->with('ITEM_NO_ID', Mockery::type('string'))
         ->once();
@@ -224,6 +239,7 @@ it('throws FailedToProcessItemException when item title is missing', function ()
     $mockLogger->shouldReceive('error')->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')->once();
     $mockRepository->shouldReceive('markAsFailed')
         ->with('ITEM_NO_TITLE', Mockery::type('string'))
         ->once();
@@ -249,6 +265,7 @@ it('marks item as failed when validation fails', function () {
     $mockLogger->shouldReceive('error')->once();
 
     $mockRepository = Mockery::mock(ItemRepositoryInterface::class);
+    $mockRepository->shouldReceive('markAsProcessing')->once();
     $mockRepository->shouldReceive('markAsFailed')
         ->once();
     $mockRepository->shouldNotReceive('saveFromApi');

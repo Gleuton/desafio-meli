@@ -7,10 +7,11 @@ use App\Core\Application\Exceptions\InvalidPaginationException;
 use App\Core\Application\UseCases\ListSavedItemsUseCase;
 use App\Core\Domain\Entities\Item;
 use App\Core\Domain\Entities\PaginatedItem;
+use App\Core\Domain\Enums\ProcessingStatus;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Http\Requests\ListItemsRequest;
 
-function createItem(int $id, string $idItem, string $sellerId): Item
+function createItem(int $id, string $idItem, string $sellerId, ProcessingStatus $processingStatus): Item
 {
     return new Item(
         $id,
@@ -18,6 +19,7 @@ function createItem(int $id, string $idItem, string $sellerId): Item
         $sellerId,
         'Sample Product',
         'active',
+        $processingStatus,
         new DateTimeImmutable,
         new DateTimeImmutable,
         new DateTimeImmutable,
@@ -25,7 +27,7 @@ function createItem(int $id, string $idItem, string $sellerId): Item
 }
 
 it('executes and returns paginated items', function () {
-    $item = createItem(1, 'MLB123', '252254392');
+    $item = createItem(1, 'MLB123', '252254392', ProcessingStatus::PROCESSED);
     $collection = new PaginatedItem(
         items: [$item],
         totalItems: 1,
@@ -129,7 +131,7 @@ it('returns empty list when no items exist', function () {
 });
 
 it('maps domain entity to response DTO correctly', function () {
-    $item = createItem(1, 'MLB456', '999999999');
+    $item = createItem(1, 'MLB456', '999999999', ProcessingStatus::PENDING);
     $collection = new PaginatedItem(
         items: [$item],
         totalItems: 1,

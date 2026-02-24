@@ -5,6 +5,7 @@ namespace App\Core\Infrastructure\Persistence\Eloquent;
 use App\Core\Application\DTOs\Input\ListItemsInputDTO;
 use App\Core\Domain\Entities\Item as DomainItem;
 use App\Core\Domain\Entities\PaginatedItem;
+use App\Core\Domain\Enums\ProcessingStatus;
 use App\Core\Infrastructure\Persistence\ItemRepositoryInterface;
 use App\Models\Item;
 use Carbon\Carbon;
@@ -21,6 +22,7 @@ class EloquentItemRepository implements ItemRepositoryInterface
             [
                 'title' => $itemData['title'] ?? null,
                 'status' => $itemData['status'] ?? null,
+                'processing_status' => ProcessingStatus::PROCESSED,
                 'processed_at' => Carbon::now(),
                 'created' => isset($itemData['created']) ? Carbon::parse($itemData['created']) : null,
                 'updated' => isset($itemData['updated']) ? Carbon::parse($itemData['updated']) : null,
@@ -42,14 +44,18 @@ class EloquentItemRepository implements ItemRepositoryInterface
     {
         Item::firstOrCreate(
             ['meli_id' => $itemId],
-            ['seller_id' => $sellerId]
+            [
+                'seller_id' => $sellerId,
+                'processing_status' => ProcessingStatus::PENDING,
+            ]
         );
     }
 
-    public function markAsProcessed(string $itemId): void
+    public function markAsProcessing(string $itemId): void
     {
         Item::where('meli_id', $itemId)->update([
             'processed_at' => Carbon::now(),
+            'processing_status' => ProcessingStatus::PROCESSING,
         ]);
     }
 
@@ -57,6 +63,7 @@ class EloquentItemRepository implements ItemRepositoryInterface
     {
         Item::where('meli_id', $itemId)->update([
             'failed_reason' => $reason,
+            'processing_status' => ProcessingStatus::FAILED,
         ]);
     }
 
@@ -95,4 +102,6 @@ class EloquentItemRepository implements ItemRepositoryInterface
             perPage: $inputDTO->perPage,
         );
     }
+
+    public function markAsProcessed(string $itemId): void {}
 }

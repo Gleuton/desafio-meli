@@ -19,6 +19,8 @@ interface ItemRepositoryInterface
 
     public function createPending(string $itemId, string $sellerId): void;
 
+    public function markAsProcessing(string $itemId): void;
+
     public function markAsProcessed(string $itemId): void;
 
     public function markAsFailed(string $itemId, string $reason): void;

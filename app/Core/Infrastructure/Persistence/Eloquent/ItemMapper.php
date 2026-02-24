@@ -3,6 +3,7 @@
 namespace App\Core\Infrastructure\Persistence\Eloquent;
 
 use App\Core\Domain\Entities\Item;
+use App\Core\Domain\Enums\ProcessingStatus;
 use App\Models\Item as ItemModel;
 use DateTimeImmutable;
 
@@ -16,6 +17,7 @@ final class ItemMapper
             sellerId: $model->seller_id,
             title: $model->title,
             status: $model->status,
+            processingStatus: ProcessingStatus::from($model->processing_status),
             created: new DateTimeImmutable($model->created->toDateTimeString()),
             updated: new DateTimeImmutable($model->updated->toDateTimeString()),
             processedAt: $model->processed_at

@@ -36,6 +36,8 @@ class ProcessItemJob implements ShouldQueue
         LoggerInterface $logger
     ): void {
         try {
+            $repository->markAsProcessing($this->itemId);
+
             $logger->info('Processing item job started', [
                 'item_id' => $this->itemId,
                 'attempt' => $this->attempts(),

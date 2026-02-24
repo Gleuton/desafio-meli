@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\Domain\Entities\Item;
 use App\Core\Domain\Entities\PaginatedItem;
+use App\Core\Domain\Enums\ProcessingStatus;
 
 function createTestItem(int $id): Item
 {
@@ -13,6 +14,7 @@ function createTestItem(int $id): Item
         sellerId: '252254392',
         title: "Sample Product {$id}",
         status: 'active',
+        processingStatus: ProcessingStatus::PROCESSED,
         created: new DateTimeImmutable('2026-02-01 10:00:00'),
         updated: new DateTimeImmutable('2026-02-15 15:30:00'),
         processedAt: new DateTimeImmutable('2026-02-20 12:00:00'),
@@ -197,6 +199,7 @@ it('creates PaginatedItem with all item properties intact', function () {
         sellerId: '123456789',
         title: 'Detailed Product Title',
         status: 'paused',
+        processingStatus: ProcessingStatus::PROCESSED,
         created: new DateTimeImmutable('2026-01-15 08:00:00'),
         updated: new DateTimeImmutable('2026-02-10 14:30:00'),
         processedAt: new DateTimeImmutable('2026-02-22 09:45:00'),
@@ -216,6 +219,7 @@ it('creates PaginatedItem with all item properties intact', function () {
         ->and($storedItem->sellerId)->toBe('123456789')
         ->and($storedItem->title)->toBe('Detailed Product Title')
         ->and($storedItem->status)->toBe('paused')
+        ->and($storedItem->processingStatus)->toBe(ProcessingStatus::PROCESSED)
         ->and($storedItem->created->format('Y-m-d H:i:s'))->toBe('2026-01-15 08:00:00')
         ->and($storedItem->updated->format('Y-m-d H:i:s'))->toBe('2026-02-10 14:30:00')
         ->and($storedItem->processedAt->format('Y-m-d H:i:s'))->toBe('2026-02-22 09:45:00');
@@ -228,6 +232,7 @@ it('handles null processedAt in items', function () {
         sellerId: '111111111',
         title: 'Unprocessed Item',
         status: 'pending',
+        processingStatus: ProcessingStatus::PENDING,
         created: new DateTimeImmutable('2026-02-20 10:00:00'),
         updated: new DateTimeImmutable('2026-02-20 10:00:00'),
         processedAt: null,

@@ -16,6 +16,7 @@ class Item extends Model
         'seller_id',
         'title',
         'status',
+        'processing_status',
         'created',
         'updated',
         'processed_at',

@@ -33,6 +33,7 @@ final class ListSavedItemsUseCase
                 $item->sellerId,
                 $item->title,
                 $item->status,
+                $item->processingStatus->value,
                 $item->created->format('Y-m-d\TH:i:s\Z'),
                 $item->updated->format('Y-m-d\TH:i:s\Z'),
                 $item->processedAt?->format('Y-m-d\TH:i:s\Z'),

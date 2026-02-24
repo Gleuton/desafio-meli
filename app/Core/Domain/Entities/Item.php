@@ -2,6 +2,7 @@
 
 namespace App\Core\Domain\Entities;
 
+use App\Core\Domain\Enums\ProcessingStatus;
 use DateTimeImmutable;
 
 class Item
@@ -16,6 +17,8 @@ class Item
 
     public private(set) string $status;
 
+    public private(set) ProcessingStatus $processingStatus;
+
     public private(set) DateTimeImmutable $created;
 
     public private(set) DateTimeImmutable $updated;
@@ -28,6 +31,7 @@ class Item
         string $sellerId,
         string $title,
         string $status,
+        ProcessingStatus $processingStatus,
         DateTimeImmutable $created,
         DateTimeImmutable $updated,
         ?DateTimeImmutable $processedAt = null
@@ -37,6 +41,7 @@ class Item
         $this->sellerId = $sellerId;
         $this->title = $title;
         $this->status = $status;
+        $this->processingStatus = $processingStatus;
         $this->created = $created;
         $this->updated = $updated;
         $this->processedAt = $processedAt;

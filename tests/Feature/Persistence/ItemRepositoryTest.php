@@ -23,6 +23,7 @@ it('saves item from api payload', function () {
         [
             'meli_id' => $payload['id'],
             'title' => $payload['title'],
+            'processing_status' => 'processed',
         ]
     );
 });
@@ -33,11 +34,13 @@ it('updates existing item instead of duplicating', function () {
     $payload1 = [
         'id' => 'MLB123',
         'title' => 'Produto A',
+        'processing_status' => 'pending',
     ];
 
     $payload2 = [
         'id' => 'MLB123',
         'title' => 'Produto B',
+        'processing_status' => 'processed',
     ];
 
     $repo->saveFromApi($payload1);
@@ -71,6 +74,27 @@ it('marks item as failed', function () {
         [
             'meli_id' => 'MLB999',
             'failed_reason' => 'API error',
+            'processing_status' => 'failed',
+        ]
+    );
+});
+
+it('marks item as processing', function () {
+    $repo = new EloquentItemRepository;
+
+    $repo->saveFromApi(['id' => 'MLB999', 'title' => 'X']);
+
+    $repo->markAsProcessing('MLB999');
+
+    $item = Item::where('meli_id', 'MLB999')->first();
+
+    expect($item->failed_reason)->toBeNull();
+    $this->assertDatabaseHas(
+        'items',
+        [
+            'meli_id' => 'MLB999',
+            'failed_reason' => null,
+            'processing_status' => 'processing',
         ]
     );
 });

@@ -25,7 +25,8 @@ class ItemFactory extends Factory
             'meli_id' => 'MLB'.fake()->unique()->numerify('##########'),
             'seller_id' => (string) fake()->numberBetween(100000, 999999),
             'title' => fake()->sentence(4),
-            'status' => 'processed',
+            'status' => 'active',
+            'processing_status' => 'processed',
             'failed_reason' => null,
             'processed_at' => now(),
             'created' => fake()->dateTimeBetween('-2 weeks', '-1 week'),
@@ -40,6 +41,7 @@ class ItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'pending',
+            'processing_status' => 'pending',
             'processed_at' => null,
             'failed_reason' => null,
         ]);
@@ -52,6 +54,7 @@ class ItemFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'failed',
+            'processing_status' => 'failed',
             'failed_reason' => $reason ?? 'Test failure reason',
             'processed_at' => null,
         ]);

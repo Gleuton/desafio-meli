@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "laravel-boost": {
+      "command": "/usr/bin/php",
+      "args": [
+        "/home/gleutondutra/Documentos/Code/dessafio-meli/artisan",
+        "boost:mcp"
+      ]
+    }
+  }
+}
