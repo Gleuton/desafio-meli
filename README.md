@@ -134,7 +134,7 @@ docker exec -it desafio_app php artisan schedule:list
 ### Endpoint de Listagem
 Para consultar os anúncios já processados e armazenados no banco de dados:
 ```bash
-GET /api/items
+GET /api/v1/items
 ```
 
 **Exemplo de requisição:**

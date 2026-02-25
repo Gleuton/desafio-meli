@@ -1,0 +1,35 @@
+Desafio Técnico
+1.Aplicação “Serviço Anúncios” (obrigatório)
+Desenvolver um serviço que capture todos os anúncios (30) do MercadoLivre e disponibilize
+os dados destes anúncios em uma API REST em formato JSON utilizando Laravel.
+Diagrama macro
+Regras de negócio:
+1. Para realizar a consultas nas API dos Mercado Livre é obrigatório um access token,
+para obtê-lo, utilize a API do Meli-Auth com o ID de seller 252254392;
+2. Somente utilize um token válido retornado pelo serviço Mei-Auth [*];
+3. Em casos de tokens inválidos, registre um log do problema e prossiga;
+4. Consulte primeiramente na API do Mercado Livre Search, utilizando o devido Bearer
+token [*];
+5. Com a lista de ids de anúncios, busque no Mercado Livre Items os detalhes de cada
+anúncios e registre em uma tabela no banco de dados MySQL; Atualize os dados
+caso execute mais vezes;6. Demonstre estes anúncios em um API;
+7. Apresente os processamentos e logs no terminal;
+Sempre que se referir a consultas em APIs de Auth ou Mercado Livre, está se referindo as
+APIs do mock. Todo projeto deve ser executado localmente.
+* Atenção: a API de Auth tenta simular uma situação real, nem todos os retornos são válidos
+(inactive_token), caso tente usar um token inválido as APIs do Mercado Livre vão retornar
+erro. A integração precisa estar preparada para estes casos.
+Detalhes do funcionamento:
+1. Inserir no banco de dados 30 anúncios capturados do Mercado Livre, pode ser
+através de uma schedule/job programada para executar a cada 10 min, ou
+executado manualmente, com as seguintes validações:
+a. Consultar no banco de dados se existem 30 anúncios cadastrados, se não
+existir realize a consulta de acordo com as regras; Caso já exista, permitir
+atualizar os dados;
+b. Certifique-se que o job não fique travado, utilize filas para consultar os dados
+de detalhes e colocá-los no banco de dados.Adicione todos os campos
+contidos na API de Items e se achar necessário outros campos, como status
+do processamento.
+2. Implementar job para processamento dos anúncios via fila;
+3. O sistema deve ter também uma API REST que retorne os dados do banco de
+dados no formato JSON;
