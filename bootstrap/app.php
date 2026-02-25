@@ -19,7 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('meli:fetch-ads', ['--no-retry'])
             ->everyTenMinutes()
             ->withoutOverlapping()
-            ->onOneServer();
+            ->onOneServer()
+            ->sendOutputTo(storage_path('logs/meli-fetch-ads.log'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
